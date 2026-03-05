@@ -1,135 +1,165 @@
-/// Nebula Dark Luxe Theme - Futuristic, Elegant, Immersive Design
-/// No Pure White. Only Depth, Light, and Sophistication.
+/// MEDITOUCH – Vivid Dark Health-Tech Theme
+/// Deep space background with pops of Electric Blue, Neon Green,
+/// Vivid Orange, Radiant Pink. Glassmorphism, glowing accents, gradients.
 library;
 
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   AppTheme._();
 
-  // Core colors for Nebula Dark Luxe Theme
-  static const Color bgDark1 = Color(0xFF0F0C29); // Deep Space
-  static const Color bgDark2 = Color(0xFF302B63); // Cosmic Purple
-  static const Color bgDark3 = Color(0xFF24243E); // Midnight Blue
-  static const Color bgLight = Color(0xFF0F0C29); // Primary background
-  static const Color bgCard = Color(0x990F0C29); // Frosted glass (60% opacity)
-  static const Color bgCardLight = Color(
-    0x660F0C29,
-  ); // Lighter glass (40% opacity)
-  static const Color primaryBlue = Color(0xFF00D1FF); // Electric Teal Glow
-  static const Color secondaryBlue = Color(0xFFB388EB); // Soft Lavender Pulse
-  static const Color textDark = Color(0xFFE0F7FA); // Crisp Light Cyan-White
-  static const Color textLight = Color(0xCC80D0C7); // Dimmed Glow (80% opacity)
-  static const Color chipBg = Color(0x4D00D1FF); // Teal with opacity
-  static const Color errorRed = Color(0xFFFF6F61); // Neon Coral
+  // ─── Color Palette (from README) ───────────────────────────────────
+  static const Color bgPrimary = Color(0xFF181A20); // Charcoal Black
+  static const Color bgSecondary = Color(0xFF23243A); // Deep Slate
+  static const Color electricBlue = Color(0xFF00B4FF);
+  static const Color neonGreen = Color(0xFF00FFB0);
+  static const Color vividOrange = Color(0xFFFF8C42);
+  static const Color radiantPink = Color(0xFFFF4F8B);
+  static const Color textPrimary = Color(0xFFFFFFFF);
+  static const Color textSecondary = Color(0xFFB0B3C6);
+  static const Color glassWhite = Color(0x14FFFFFF); // ~8 % white
+  static const Color glassBorder = Color(0x30FFFFFF); // subtle border
 
-  // Expose these for other parts of the app to use (backwards compatibility)
-  static const Color bgDark = bgDark1;
-  static const Color teal = primaryBlue;
-  static const Color tealDark = Color(0xFF00A8CC);
-  static const Color tealLight = Color(0xFF80E8FF);
-  static const Color white = Color(0xFFE0F7FA); // No pure white - soft glow
-  static const Color grey = textLight;
-  static const Color greyLight = Color(0x8080D0C7);
+  // Gradient
+  static const LinearGradient accentGradient = LinearGradient(
+    colors: [electricBlue, radiantPink],
+  );
+  static const LinearGradient greenBlueGradient = LinearGradient(
+    colors: [neonGreen, electricBlue],
+  );
+  static const LinearGradient orangePinkGradient = LinearGradient(
+    colors: [vividOrange, radiantPink],
+  );
+
+  // ─── Backwards-Compat Aliases ──────────────────────────────────────
+  static const Color bgDark = bgPrimary;
+  static const Color bgDark1 = bgPrimary;
+  static const Color bgDark2 = bgSecondary;
+  static const Color bgDark3 = Color(0xFF1E1F30);
+  static const Color bgLight = bgPrimary;
+  static const Color bgCard = Color(0x14FFFFFF);
+  static const Color bgCardLight = Color(0x0CFFFFFF);
+  static const Color primaryBlue = electricBlue;
+  static const Color teal = electricBlue;
+  static const Color tealDark = Color(0xFF0090D0);
+  static const Color tealLight = Color(0xFF66CFFF);
+  static const Color white = textPrimary;
+  static const Color grey = textSecondary;
+  static const Color greyLight = Color(0x99B0B3C6);
+  static const Color textDark = textPrimary;
+  static const Color textLight = textSecondary;
+  static const Color chipBg = Color(0x3300B4FF);
+  static const Color errorRed = Color(0xFFFF4F8B);
   static const Color error = errorRed;
+  static const Color accent = radiantPink;
+  static const Color success = neonGreen;
+  static const Color warning = vividOrange;
+  static const Color secondaryBlue = Color(0xFF6C63FF);
 
-  // Additional theme colors
-  static const Color accent = secondaryBlue; // Soft Lavender
-  static const Color success = Color(0xFF00EFC4); // Emerald Pulse
-  static const Color warning = Color(0xFFFF6F61); // Neon Coral
-
+  // ─── ThemeData ─────────────────────────────────────────────────────
   static ThemeData get lightTheme {
+    final base = ThemeData.dark();
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: bgDark1,
-      colorScheme: ColorScheme.dark(
-        primary: primaryBlue,
-        secondary: secondaryBlue,
-        surface: bgCard,
+      scaffoldBackgroundColor: bgPrimary,
+      colorScheme: const ColorScheme.dark(
+        primary: electricBlue,
+        secondary: radiantPink,
+        surface: bgSecondary,
         error: errorRed,
-        onPrimary: bgDark1,
-        onSecondary: textDark,
-        onSurface: textDark,
-        onError: textDark,
+        onPrimary: bgPrimary,
+        onSecondary: textPrimary,
+        onSurface: textPrimary,
+        onError: textPrimary,
       ),
-      textTheme: GoogleFonts.montserratTextTheme(ThemeData.dark().textTheme)
-          .apply(bodyColor: textDark, displayColor: textDark)
+      textTheme: GoogleFonts.poppinsTextTheme(base.textTheme)
+          .apply(bodyColor: textPrimary, displayColor: textPrimary)
           .copyWith(
-            titleLarge: GoogleFonts.montserrat(
+            headlineLarge: GoogleFonts.poppins(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: textPrimary,
+            ),
+            headlineMedium: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: textPrimary,
+            ),
+            titleLarge: GoogleFonts.poppins(
               fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: textDark,
-              letterSpacing: 1.5,
+              fontWeight: FontWeight.w600,
+              color: textPrimary,
             ),
-            titleMedium: GoogleFonts.montserrat(
+            titleMedium: GoogleFonts.poppins(
               fontSize: 16,
-              fontWeight: FontWeight.w300,
-              color: textDark,
-              letterSpacing: 1.5,
+              fontWeight: FontWeight.w500,
+              color: textPrimary,
             ),
-            bodyMedium: GoogleFonts.montserrat(fontSize: 14, color: textLight),
-            bodyLarge: GoogleFonts.montserrat(fontSize: 16, color: textDark),
+            bodyLarge: GoogleFonts.inter(fontSize: 16, color: textPrimary),
+            bodyMedium: GoogleFonts.inter(fontSize: 14, color: textSecondary),
+            labelLarge: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: textPrimary,
+            ),
           ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.montserrat(
-          color: textDark,
+        titleTextStyle: GoogleFonts.poppins(
+          color: textPrimary,
           fontSize: 22,
-          fontWeight: FontWeight.w300,
-          letterSpacing: 1.5,
+          fontWeight: FontWeight.w700,
         ),
-        iconTheme: IconThemeData(color: textDark),
+        iconTheme: const IconThemeData(color: textPrimary),
       ),
       cardTheme: CardThemeData(
-        color: bgCard,
+        color: glassWhite,
         elevation: 0,
-        shadowColor: primaryBlue.withOpacity(0.2),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: primaryBlue.withOpacity(0.2), width: 1),
+          side: const BorderSide(color: glassBorder, width: 1),
         ),
-        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 0),
+        margin: const EdgeInsets.symmetric(vertical: 6),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: bgCard,
-        selectedItemColor: primaryBlue,
-        unselectedItemColor: textLight,
+        backgroundColor: bgPrimary,
+        selectedItemColor: electricBlue,
+        unselectedItemColor: textSecondary,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
-        selectedLabelStyle: GoogleFonts.montserrat(
-          fontSize: 12,
+        selectedLabelStyle: GoogleFonts.poppins(
+          fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
-        unselectedLabelStyle: GoogleFonts.montserrat(fontSize: 12),
+        unselectedLabelStyle: GoogleFonts.poppins(fontSize: 11),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: primaryBlue,
-        foregroundColor: bgDark1,
+        backgroundColor: electricBlue,
+        foregroundColor: bgPrimary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         elevation: 0,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: bgCardLight,
+        fillColor: glassWhite,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: primaryBlue.withOpacity(0.2), width: 1),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: glassBorder, width: 1),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: primaryBlue.withOpacity(0.2), width: 1),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: glassBorder, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: primaryBlue, width: 2),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: electricBlue, width: 2),
         ),
-        hintStyle: GoogleFonts.montserrat(color: textLight, fontSize: 14),
-        labelStyle: GoogleFonts.montserrat(color: textLight, fontSize: 14),
+        hintStyle: GoogleFonts.inter(color: textSecondary, fontSize: 14),
+        labelStyle: GoogleFonts.inter(color: textSecondary, fontSize: 14),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 16,
@@ -137,161 +167,101 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryBlue,
-          foregroundColor: bgDark1,
+          backgroundColor: electricBlue,
+          foregroundColor: bgPrimary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          textStyle: GoogleFonts.montserrat(
+          textStyle: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            letterSpacing: 1.0,
           ),
           elevation: 0,
-          shadowColor: primaryBlue.withOpacity(0.5),
         ),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: chipBg,
-        selectedColor: primaryBlue.withOpacity(0.3),
-        labelStyle: GoogleFonts.montserrat(color: textDark, fontSize: 13),
-        secondaryLabelStyle: GoogleFonts.montserrat(
-          color: primaryBlue,
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
-        ),
+        selectedColor: electricBlue.withValues(alpha: 0.3),
+        labelStyle: GoogleFonts.inter(color: textPrimary, fontSize: 13),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: primaryBlue.withOpacity(0.2)),
+          side: const BorderSide(color: glassBorder),
         ),
         side: BorderSide.none,
       ),
       switchTheme: SwitchThemeData(
-        thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return primaryBlue;
-          return textLight;
+        thumbColor: WidgetStateProperty.resolveWith((s) {
+          if (s.contains(WidgetState.selected)) return electricBlue;
+          return textSecondary;
         }),
-        trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected))
-            return primaryBlue.withOpacity(0.3);
-          return chipBg;
+        trackColor: WidgetStateProperty.resolveWith((s) {
+          if (s.contains(WidgetState.selected)) {
+            return electricBlue.withValues(alpha: 0.35);
+          }
+          return glassWhite;
         }),
       ),
       dropdownMenuTheme: DropdownMenuThemeData(
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: bgCardLight,
+          fillColor: glassWhite,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(
-              color: primaryBlue.withOpacity(0.2),
-              width: 1,
-            ),
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: glassBorder, width: 1),
           ),
         ),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: bgCard,
+        backgroundColor: bgSecondary,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
-          side: BorderSide(color: primaryBlue.withOpacity(0.2), width: 1),
+          side: const BorderSide(color: glassBorder, width: 1),
         ),
       ),
-      bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: bgCard,
-        shape: const RoundedRectangleBorder(
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: bgSecondary,
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
       ),
     );
   }
 
-  // Glassmorphic glow effect (for cards and surfaces)
-  static List<BoxShadow> get glassShadow => [
-    BoxShadow(
-      color: primaryBlue.withOpacity(0.15),
-      offset: const Offset(0, 0),
-      blurRadius: 20,
-      spreadRadius: 0,
-    ),
-  ];
+  // ─── Decorations & Helpers ─────────────────────────────────────────
 
-  // Floating FAB glow (pulsing effect)
-  static List<BoxShadow> get fabGlow => [
-    BoxShadow(
-      color: primaryBlue.withOpacity(0.5),
-      offset: const Offset(0, 0),
-      blurRadius: 20,
-      spreadRadius: 2,
-    ),
-  ];
+  /// Glassmorphic card decoration with blur-ready styling.
+  static BoxDecoration glassCard({
+    double borderRadius = 20,
+    Color? borderColor,
+  }) {
+    return BoxDecoration(
+      color: glassWhite,
+      borderRadius: BorderRadius.circular(borderRadius),
+      border: Border.all(color: borderColor ?? glassBorder, width: 1),
+    );
+  }
 
-  // Gradient background for scaffold (deep space effect)
-  static BoxDecoration get nebulaBackground => BoxDecoration(
+  /// Glowing box-shadow for accent-coloured elements.
+  static List<BoxShadow> glow(Color c, {double blur = 20, double spread = 0}) {
+    return [
+      BoxShadow(
+        color: c.withValues(alpha: 0.45),
+        blurRadius: blur,
+        spreadRadius: spread,
+      ),
+    ];
+  }
+
+  static List<BoxShadow> get fabGlow => glow(electricBlue, blur: 24, spread: 2);
+
+  /// Full-screen gradient background.
+  static BoxDecoration get scaffoldGradient => const BoxDecoration(
     gradient: LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [bgDark1, bgDark2, bgDark3],
-      stops: const [0.0, 0.5, 1.0],
+      colors: [bgPrimary, bgSecondary, bgPrimary],
+      stops: [0.0, 0.5, 1.0],
     ),
   );
-
-  // Glassmorphic card decoration
-  static BoxDecoration glassMorphicCard({
-    double borderRadius = 20,
-    double opacity = 0.6,
-  }) => BoxDecoration(
-    color: Color.fromRGBO(15, 12, 41, opacity),
-    borderRadius: BorderRadius.circular(borderRadius),
-    border: Border.all(color: primaryBlue.withOpacity(0.2), width: 1),
-    boxShadow: glassShadow,
-  );
-
-  // Text glow effect for active labels
-  static Shadow get textGlow =>
-      Shadow(color: primaryBlue.withOpacity(0.13), blurRadius: 5);
-}
-
-class GlassCard extends StatelessWidget {
-  final Widget child;
-
-  const GlassCard({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.all(12),
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF0F0C29), Color(0xFF302B63)],
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Color.fromARGB(80, 15, 12, 41),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Color(0x4000D1FF), width: 0.8),
-              boxShadow: [
-                BoxShadow(
-                  color: Color(0x2000D1FF),
-                  blurRadius: 8,
-                  spreadRadius: 1,
-                  offset: Offset(0, 0),
-                ),
-              ],
-            ),
-            child: child,
-          ),
-        ),
-      ),
-    );
-  }
 }

@@ -1,5 +1,6 @@
-// Home dashboard screen with greeting, progress, next dose, water tracker,
-// vitals summary, appointment preview, health tips, and mood check-in.
+// Home dashboard screen — glassmorphic cards, accent color highlights,
+// gradient header, animated widgets, nebula background.
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +9,8 @@ import '../theme/app_theme.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
 import '../services/notification_service.dart';
+import '../widgets/glass_card.dart';
+import '../widgets/nebula_background.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -20,7 +23,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Request permissions after widget is bound
     WidgetsBinding.instance.addPostFrameCallback((_) {
       NotificationService().requestPermissions();
     });
@@ -36,12 +38,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final vitals = ref.watch(vitalsProvider);
     final streak = ref.read(medicinesProvider.notifier).adherenceStreak;
 
-    // Calculate progress
     final totalDoses = medicines.fold<int>(0, (s, m) => s + m.totalDoses);
     final takenDoses = medicines.fold<int>(0, (s, m) => s + m.takenCount);
     final progress = totalDoses > 0 ? takenDoses / totalDoses : 0.0;
 
-    // Next upcoming medicine
     Medicine? nextMed;
     String? nextTime;
     for (final med in medicines) {
@@ -56,184 +56,226 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     final nextAppt = appointmentsNotifier.nextUpcoming;
-
-    // Health tip of the day (rotate by day of year)
     final tipIndex =
         DateTime.now().difference(DateTime(DateTime.now().year)).inDays %
         kHealthTips.length;
     final tip = kHealthTips[tipIndex];
 
-    return Scaffold(
-      backgroundColor: AppTheme.bgDark,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildGreeting(context, profile),
-              const SizedBox(height: 20),
+    return NebulaBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          bottom: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ─── Greeting Header ──────────────────────
+                _buildGreeting(context, profile),
+                const SizedBox(height: 20),
 
-              // Adherence streak badge
-              if (streak > 0) ...[
-                _buildStreakBadge(streak),
-                const SizedBox(height: 16),
+                // ─── Streak badge ─────────────────────────
+                if (streak > 0) ...[
+                  _buildStreakBadge(streak),
+                  const SizedBox(height: 16),
+                ],
+
+                // ─── Progress Card ────────────────────────
+                _buildProgressCard(takenDoses, totalDoses, progress),
+                const SizedBox(height: 20),
+
+                // ─── Hydration ────────────────────────────
+                _sectionTitle('HYDRATION', AppTheme.electricBlue),
+                const SizedBox(height: 10),
+                _buildWaterCard(context, ref, water),
+                const SizedBox(height: 20),
+
+                // ─── Health Tip ───────────────────────────
+                _sectionTitle('HEALTH TIP', AppTheme.neonGreen),
+                const SizedBox(height: 10),
+                _buildTipCard(tip),
+                const SizedBox(height: 20),
+
+                // ─── Vitals ───────────────────────────────
+                _sectionTitle('VITALS SNAPSHOT', AppTheme.vividOrange),
+                const SizedBox(height: 10),
+                _buildVitalsRow(context, ref, vitals),
+                const SizedBox(height: 20),
+
+                // ─── Next Up ──────────────────────────────
+                _sectionTitle('NEXT UP', AppTheme.radiantPink),
+                const SizedBox(height: 10),
+                nextMed != null && nextTime != null
+                    ? _buildNextUpCard(context, ref, nextMed, nextTime)
+                    : _buildEmptyCard(
+                      'All doses completed for today. Well done!',
+                    ),
+                const SizedBox(height: 20),
+
+                // ─── Appointments ─────────────────────────
+                _sectionTitle('APPOINTMENTS', AppTheme.electricBlue),
+                const SizedBox(height: 10),
+                nextAppt != null
+                    ? _buildAppointmentCard(context, ref, nextAppt)
+                    : _buildEmptyCard('No appointments scheduled.'),
+                const SizedBox(height: 20),
+
+                // ─── Mood ─────────────────────────────────
+                _sectionTitle(
+                  'DAILY CHECK-IN',
+                  AppTheme.radiantPink,
+                  trailing: _logMoodBtn(context, ref),
+                ),
+                const SizedBox(height: 10),
+                _buildMoodRow(context, ref, checkIn),
+                const SizedBox(height: 20),
               ],
-
-              _buildProgressCard(takenDoses, totalDoses, progress),
-              const SizedBox(height: 20),
-
-              // Water Intake
-              _buildSectionTitle('HYDRATION'),
-              const SizedBox(height: 10),
-              _buildWaterCard(context, ref, water),
-              const SizedBox(height: 20),
-
-              // Health Tip
-              _buildSectionTitle('HEALTH TIP'),
-              const SizedBox(height: 10),
-              _buildTipCard(tip),
-              const SizedBox(height: 20),
-
-              // Vitals summary
-              _buildSectionTitle('VITALS SNAPSHOT'),
-              const SizedBox(height: 10),
-              _buildVitalsRow(context, ref, vitals),
-              const SizedBox(height: 20),
-
-              _buildSectionTitle('NEXT UP'),
-              const SizedBox(height: 10),
-              nextMed != null && nextTime != null
-                  ? _buildNextUpCard(context, ref, nextMed, nextTime)
-                  : _buildEmptyCard(
-                    'All guards completed for today. System balanced.',
-                  ),
-              const SizedBox(height: 20),
-
-              _buildSectionTitle('CARE POINTS'),
-              const SizedBox(height: 10),
-              nextAppt != null
-                  ? _buildAppointmentCard(context, ref, nextAppt)
-                  : _buildEmptyCard('No care points scheduled. Breathe easy.'),
-              const SizedBox(height: 20),
-
-              _buildSectionTitle(
-                'DAILY CHECK-IN',
-                trailing: _logMoodBtn(context, ref),
-              ),
-              const SizedBox(height: 10),
-              _buildMoodRow(context, ref, checkIn),
-              const SizedBox(height: 20),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
+  // ─── Greeting ─────────────────────────────────────────────────────
   Widget _buildGreeting(BuildContext context, UserProfile profile) {
     final dateStr = DateFormat('EEEE, MMM d').format(DateTime.now());
-    return Row(
-      children: [
-        CircleAvatar(
-          radius: 26,
-          backgroundColor: AppTheme.teal.withValues(alpha: 0.3),
-          child: Text(
-            profile.name.isNotEmpty ? profile.name[0].toUpperCase() : '?',
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.teal,
+    return GlassCard(
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              gradient: AppTheme.accentGradient,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: AppTheme.glow(AppTheme.electricBlue, blur: 14),
             ),
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Welcome back, Guardian.',
+            child: Center(
+              child: Text(
+                profile.name.isNotEmpty ? profile.name[0].toUpperCase() : '?',
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                dateStr,
-                style: const TextStyle(color: AppTheme.teal, fontSize: 14),
-              ),
-            ],
-          ),
-        ),
-        IconButton(
-          icon: const Icon(
-            Icons.notifications_outlined,
-            color: AppTheme.teal,
-            size: 28,
-          ),
-          onPressed: () async {
-            await NotificationService().requestPermissions();
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Requested notification permissions.'),
-                  backgroundColor: AppTheme.teal,
-                ),
-              );
-            }
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStreakBadge(int streak) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.teal.withValues(alpha: 0.2),
-            AppTheme.tealDark.withValues(alpha: 0.1),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.teal.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          const Text('🔥', style: TextStyle(fontSize: 24)),
-          const SizedBox(width: 10),
-          Text(
-            '$streak guard${streak > 1 ? 's' : ''} secured today.',
-            style: const TextStyle(
-              color: AppTheme.teal,
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
             ),
           ),
-          const Spacer(),
-          const Text(
-            'Protocol stable.',
-            style: TextStyle(color: AppTheme.grey, fontSize: 12),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Welcome back${profile.name.isNotEmpty ? ', ${profile.name.split(' ').first}' : ''}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  dateStr,
+                  style: const TextStyle(
+                    color: AppTheme.electricBlue,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.glassWhite,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              icon: const Icon(
+                Icons.notifications_outlined,
+                color: AppTheme.electricBlue,
+                size: 24,
+              ),
+              onPressed: () async {
+                await NotificationService().requestPermissions();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text(
+                        'Notification permissions requested.',
+                      ),
+                      backgroundColor: AppTheme.electricBlue,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
           ),
         ],
       ),
     );
   }
 
+  // ─── Streak Badge ─────────────────────────────────────────────────
+  Widget _buildStreakBadge(int streak) {
+    return GlassCard(
+      borderColor: AppTheme.neonGreen.withValues(alpha: 0.4),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              gradient: AppTheme.greenBlueGradient,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: AppTheme.glow(AppTheme.neonGreen, blur: 10),
+            ),
+            child: const Icon(
+              Icons.local_fire_department_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            '$streak dose${streak > 1 ? 's' : ''} taken today',
+            style: const TextStyle(
+              color: AppTheme.neonGreen,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+          ),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppTheme.neonGreen.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Text(
+              'On Track',
+              style: TextStyle(
+                color: AppTheme.neonGreen,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Progress Card ────────────────────────────────────────────────
   Widget _buildProgressCard(int taken, int total, double progress) {
     final pct = (progress * 100).toInt();
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.bgCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.teal.withValues(alpha: 0.2)),
-      ),
+    return GlassCard(
+      borderColor: AppTheme.electricBlue.withValues(alpha: 0.3),
       child: Row(
         children: [
           Expanded(
@@ -241,27 +283,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Regimen Flow',
+                  'Today\'s Progress',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
-                  '$total guards active in your regimen.',
-                  style: const TextStyle(color: AppTheme.grey, fontSize: 14),
+                  '$total doses in your regimen',
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 13,
+                  ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
+                    horizontal: 14,
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: AppTheme.teal,
+                    gradient: AppTheme.accentGradient,
                     borderRadius: BorderRadius.circular(16),
+                    boxShadow: AppTheme.glow(AppTheme.electricBlue, blur: 10),
                   ),
                   child: Text(
                     '$pct% Complete',
@@ -276,19 +322,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           CircularPercentIndicator(
-            radius: 42,
-            lineWidth: 6,
+            radius: 44,
+            lineWidth: 7,
             percent: progress.clamp(0.0, 1.0),
             center: Text(
               '$taken/$total',
               style: const TextStyle(
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
-            progressColor: AppTheme.teal,
-            backgroundColor: AppTheme.chipBg,
+            progressColor: AppTheme.electricBlue,
+            backgroundColor: AppTheme.glassWhite,
             circularStrokeCap: CircularStrokeCap.round,
           ),
         ],
@@ -296,24 +342,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  // ─── Water Card ───────────────────────────────────────────────────
   Widget _buildWaterCard(
     BuildContext context,
     WidgetRef ref,
     WaterIntake water,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.bgCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
-      ),
+    return GlassCard(
+      borderColor: AppTheme.electricBlue.withValues(alpha: 0.2),
       child: Column(
         children: [
           Row(
             children: [
-              const Text('💧', style: TextStyle(fontSize: 28)),
-              const SizedBox(width: 10),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF00B4FF), Color(0xFF6C63FF)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: AppTheme.glow(AppTheme.electricBlue, blur: 10),
+                ),
+                child: const Icon(
+                  Icons.water_drop_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -329,67 +385,72 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     Text(
                       '${water.glassCount} of ${water.goal} glasses',
                       style: const TextStyle(
-                        color: AppTheme.grey,
+                        color: AppTheme.textSecondary,
                         fontSize: 13,
                       ),
                     ),
                   ],
                 ),
               ),
-              Text(
-                '${(water.percentage * 100).toInt()}%',
-                style: const TextStyle(
-                  color: Colors.blue,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppTheme.electricBlue.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${(water.percentage * 100).toInt()}%',
+                  style: const TextStyle(
+                    color: AppTheme.electricBlue,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          // Progress bar
+          const SizedBox(height: 14),
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
               value: water.percentage,
-              minHeight: 8,
-              backgroundColor: AppTheme.chipBg,
-              color: Colors.blue.shade400,
+              minHeight: 6,
+              backgroundColor: AppTheme.glassWhite,
+              color: AppTheme.electricBlue,
             ),
           ),
-          const SizedBox(height: 12),
-          // Glass buttons
+          const SizedBox(height: 14),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              IconButton(
-                onPressed:
-                    () => ref.read(waterIntakeProvider.notifier).removeGlass(),
-                icon: const Icon(
-                  Icons.remove_circle_outline,
-                  color: Colors.blue,
-                ),
+              _glassBtn(
+                Icons.remove_rounded,
+                () => ref.read(waterIntakeProvider.notifier).removeGlass(),
               ),
+              const SizedBox(width: 8),
               ...List.generate(
                 water.goal,
                 (i) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 1.5),
                   child: Icon(
                     i < water.glassCount
-                        ? Icons.local_drink
+                        ? Icons.local_drink_rounded
                         : Icons.local_drink_outlined,
                     color:
                         i < water.glassCount
-                            ? Colors.blue.shade400
-                            : AppTheme.chipBg,
-                    size: 22,
+                            ? AppTheme.electricBlue
+                            : AppTheme.glassWhite,
+                    size: 20,
                   ),
                 ),
               ),
-              IconButton(
-                onPressed:
-                    () => ref.read(waterIntakeProvider.notifier).addGlass(),
-                icon: const Icon(Icons.add_circle_outline, color: Colors.blue),
+              const SizedBox(width: 8),
+              _glassBtn(
+                Icons.add_rounded,
+                () => ref.read(waterIntakeProvider.notifier).addGlass(),
               ),
             ],
           ),
@@ -398,21 +459,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildTipCard(HealthTip tip) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppTheme.bgCard, AppTheme.tealDark.withValues(alpha: 0.15)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+  Widget _glassBtn(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: AppTheme.electricBlue.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: AppTheme.electricBlue.withValues(alpha: 0.3),
+          ),
         ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.teal.withValues(alpha: 0.15)),
+        child: Icon(icon, color: AppTheme.electricBlue, size: 20),
       ),
+    );
+  }
+
+  // ─── Health Tip ───────────────────────────────────────────────────
+  Widget _buildTipCard(HealthTip tip) {
+    return GlassCard(
+      borderColor: AppTheme.neonGreen.withValues(alpha: 0.25),
       child: Row(
         children: [
-          Text(tip.icon, style: const TextStyle(fontSize: 32)),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              gradient: AppTheme.greenBlueGradient,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: AppTheme.glow(AppTheme.neonGreen, blur: 10),
+            ),
+            child: Text(tip.icon, style: const TextStyle(fontSize: 22)),
+          ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -429,7 +507,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 4),
                 Text(
                   tip.body,
-                  style: const TextStyle(color: AppTheme.grey, fontSize: 13),
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -439,6 +520,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  // ─── Vitals ───────────────────────────────────────────────────────
   Widget _buildVitalsRow(
     BuildContext context,
     WidgetRef ref,
@@ -452,28 +534,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Row(
       children: [
         _vitalMini(
-          '❤️',
+          Icons.favorite_rounded,
           'Heart Rate',
           hr != null ? '${hr.value.toInt()} bpm' : '--',
-          Colors.redAccent,
+          AppTheme.radiantPink,
           () => _showAddVital(context, ref, 'heartRate'),
         ),
         const SizedBox(width: 8),
         _vitalMini(
-          '🩸',
+          Icons.bloodtype_rounded,
           'Blood P.',
           bp != null
               ? '${bp.value.toInt()}/${bp.value2?.toInt() ?? 0}'
               : '--/--',
-          Colors.orangeAccent,
+          AppTheme.vividOrange,
           () => _showAddVital(context, ref, 'bp'),
         ),
         const SizedBox(width: 8),
         _vitalMini(
-          '🍬',
+          Icons.monitor_heart_rounded,
           'Sugar',
           bs != null ? '${bs.value.toInt()} mg/dL' : '--',
-          Colors.purpleAccent,
+          AppTheme.neonGreen,
           () => _showAddVital(context, ref, 'bloodSugar'),
         ),
       ],
@@ -481,7 +563,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _vitalMini(
-    String emoji,
+    IconData icon,
     String label,
     String value,
     Color accent,
@@ -490,39 +572,55 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppTheme.bgCard,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: accent.withValues(alpha: 0.2)),
-          ),
-          child: Column(
-            children: [
-              Text(emoji, style: const TextStyle(fontSize: 22)),
-              const SizedBox(height: 6),
-              Text(
-                value,
-                style: TextStyle(
-                  color: accent,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppTheme.glassWhite,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: accent.withValues(alpha: 0.25)),
               ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: const TextStyle(color: AppTheme.grey, fontSize: 11),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(icon, color: accent, size: 20),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      color: accent,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 11,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Tap to log',
+                    style: TextStyle(
+                      color: accent.withValues(alpha: 0.6),
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Tap to log',
-                style: TextStyle(
-                  color: accent.withValues(alpha: 0.6),
-                  fontSize: 10,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -625,59 +723,59 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  // ─── Next Up ──────────────────────────────────────────────────────
   Widget _buildNextUpCard(
     BuildContext context,
     WidgetRef ref,
     Medicine med,
     String time,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.bgCardLight,
-            AppTheme.tealDark.withValues(alpha: 0.3),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
+    return GlassCard(
+      borderColor: AppTheme.radiantPink.withValues(alpha: 0.3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Text(
-                'DUE AT $time',
-                style: const TextStyle(
-                  color: AppTheme.teal,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  gradient: AppTheme.orangePinkGradient,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  'DUE AT $time',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.bgCard.withValues(alpha: 0.5),
+                  color: AppTheme.glassWhite,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
-                  Icons.access_time,
+                  Icons.access_time_rounded,
                   color: Colors.white,
-                  size: 20,
+                  size: 18,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
             med.name,
             style: const TextStyle(
-              fontSize: 24,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
@@ -685,35 +783,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: 4),
           Text(
             '${med.dosage} • ${med.notes ?? med.form}',
-            style: const TextStyle(color: AppTheme.greyLight, fontSize: 14),
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
           ),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                ref
-                    .read(medicinesProvider.notifier)
-                    .markTimeTaken(med.id, time);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('${med.name} secured in regimen.'),
-                    backgroundColor: AppTheme.teal,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                gradient: AppTheme.accentGradient,
+                boxShadow: AppTheme.glow(AppTheme.electricBlue, blur: 12),
+              ),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  ref
+                      .read(medicinesProvider.notifier)
+                      .markTimeTaken(med.id, time);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${med.name} marked as taken!'),
+                      backgroundColor: AppTheme.neonGreen,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
+                  );
+                },
+                icon: const Icon(Icons.check_circle_rounded, size: 20),
+                label: const Text('Mark as Taken'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                );
-              },
-              icon: const Icon(Icons.check_circle, size: 20),
-              label: const Text('Secure Protocol'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: AppTheme.teal,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),
@@ -723,32 +829,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  // ─── Appointment Card ─────────────────────────────────────────────
   Widget _buildAppointmentCard(
     BuildContext context,
     WidgetRef ref,
     Appointment appt,
   ) {
-    return InkWell(
+    return GestureDetector(
       onTap: () => ref.read(currentTabProvider.notifier).state = 3,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppTheme.bgCard,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.teal.withValues(alpha: 0.15)),
-        ),
+      child: GlassCard(
+        borderColor: AppTheme.electricBlue.withValues(alpha: 0.2),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppTheme.teal.withValues(alpha: 0.15),
+                gradient: AppTheme.accentGradient,
                 borderRadius: BorderRadius.circular(12),
+                boxShadow: AppTheme.glow(AppTheme.electricBlue, blur: 10),
               ),
               child: const Icon(
-                Icons.calendar_today,
-                color: AppTheme.teal,
+                Icons.calendar_month_rounded,
+                color: Colors.white,
                 size: 20,
               ),
             ),
@@ -761,35 +863,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     appt.doctorName,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 15,
                       color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '${appt.specialty} • ${DateFormat('EEEE').format(appt.dateTime)} at ${DateFormat('h:mm a').format(appt.dateTime)}',
-                    style: const TextStyle(color: AppTheme.grey, fontSize: 12),
+                    style: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppTheme.grey),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppTheme.textSecondary,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title, {Widget? trailing}) {
+  // ─── Section Title ────────────────────────────────────────────────
+  Widget _sectionTitle(String title, Color accent, {Widget? trailing}) {
     return Row(
       children: [
+        Container(
+          width: 3,
+          height: 16,
+          decoration: BoxDecoration(
+            color: accent,
+            borderRadius: BorderRadius.circular(2),
+            boxShadow: [
+              BoxShadow(color: accent.withValues(alpha: 0.5), blurRadius: 6),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
         Text(
           title,
-          style: const TextStyle(
-            color: AppTheme.grey,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 1.2,
+          style: TextStyle(
+            color: accent,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.5,
           ),
         ),
         const Spacer(),
@@ -801,12 +922,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _logMoodBtn(BuildContext context, WidgetRef ref) {
     return GestureDetector(
       onTap: () => _showMoodSheet(context, ref),
-      child: const Text(
-        'Log Mood',
-        style: TextStyle(
-          color: AppTheme.teal,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        decoration: BoxDecoration(
+          gradient: AppTheme.orangePinkGradient,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Text(
+          'Log Mood',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
@@ -841,14 +969,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: List.generate(5, (i) {
                       final moods = ['😫', '😟', '😐', '🙂', '🤩'];
                       final isSel = sel == i + 1;
+                      final colors = [
+                        AppTheme.radiantPink,
+                        AppTheme.vividOrange,
+                        AppTheme.textSecondary,
+                        AppTheme.electricBlue,
+                        AppTheme.neonGreen,
+                      ];
                       return GestureDetector(
                         onTap: () => setBS(() => sel = i + 1),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: isSel ? AppTheme.teal : AppTheme.chipBg,
+                            color:
+                                isSel
+                                    ? colors[i].withValues(alpha: 0.2)
+                                    : AppTheme.glassWhite,
                             shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isSel ? colors[i] : Colors.transparent,
+                              width: 2,
+                            ),
+                            boxShadow:
+                                isSel
+                                    ? AppTheme.glow(colors[i], blur: 10)
+                                    : null,
                           ),
                           child: Text(
                             moods[i],
@@ -894,54 +1040,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  // ─── Mood Row ─────────────────────────────────────────────────────
   Widget _buildMoodRow(
     BuildContext context,
     WidgetRef ref,
     DailyCheckIn? checkIn,
   ) {
     final moods = ['😫', '😟', '😐', '🙂', '🤩'];
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: List.generate(5, (i) {
-        final isSel = checkIn?.mood == i + 1;
-        return GestureDetector(
-          onTap: () => ref.read(checkInProvider.notifier).saveMood(i + 1),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isSel ? AppTheme.teal : AppTheme.chipBg,
-              shape: BoxShape.circle,
-              boxShadow:
-                  isSel
-                      ? [
-                        BoxShadow(
-                          color: AppTheme.teal.withValues(alpha: 0.4),
-                          blurRadius: 8,
-                          spreadRadius: 1,
-                        ),
-                      ]
-                      : null,
+    final colors = [
+      AppTheme.radiantPink,
+      AppTheme.vividOrange,
+      AppTheme.textSecondary,
+      AppTheme.electricBlue,
+      AppTheme.neonGreen,
+    ];
+    return GlassCard(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: List.generate(5, (i) {
+          final isSel = checkIn?.mood == i + 1;
+          return GestureDetector(
+            onTap: () => ref.read(checkInProvider.notifier).saveMood(i + 1),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color:
+                    isSel
+                        ? colors[i].withValues(alpha: 0.2)
+                        : Colors.transparent,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSel ? colors[i] : Colors.transparent,
+                  width: 2,
+                ),
+                boxShadow: isSel ? AppTheme.glow(colors[i], blur: 10) : null,
+              ),
+              child: Text(moods[i], style: const TextStyle(fontSize: 26)),
             ),
-            child: Text(moods[i], style: const TextStyle(fontSize: 28)),
-          ),
-        );
-      }),
+          );
+        }),
+      ),
     );
   }
 
+  // ─── Empty Card ───────────────────────────────────────────────────
   Widget _buildEmptyCard(String msg) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.bgCard,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        msg,
-        textAlign: TextAlign.center,
-        style: const TextStyle(color: AppTheme.grey, fontSize: 14),
+    return GlassCard(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            msg,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+          ),
+        ),
       ),
     );
   }

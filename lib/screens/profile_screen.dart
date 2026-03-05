@@ -1,9 +1,15 @@
-// Profile screen with personal info, health conditions, allergies, BMI, and emergency contact.
+/// Profile screen — glassmorphic info cards, glowing avatar, accent BMI card,
+/// gradient save button, nebula background.
+library;
+
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
+import '../widgets/nebula_background.dart';
+import '../widgets/glass_card.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -56,303 +62,439 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _inited = true;
   }
 
+  Widget _sectionLabel(String t, {Color color = AppTheme.electricBlue}) {
+    return Row(
+      children: [
+        Container(
+          width: 3,
+          height: 14,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+            boxShadow: AppTheme.glow(color, blur: 6),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          t,
+          style: TextStyle(
+            color: color,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.5,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_inited) _init();
     final profile = ref.watch(profileProvider);
 
-    return Scaffold(
-      backgroundColor: AppTheme.bgDark,
-      appBar: AppBar(
-        backgroundColor: AppTheme.bgDark,
-        title: const Text('Identity Core'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Avatar with initial
-            CircleAvatar(
-              radius: 45,
-              backgroundColor: AppTheme.teal.withValues(alpha: 0.2),
-              child: Text(
-                profile.name.isNotEmpty ? profile.name[0].toUpperCase() : '?',
-                style: const TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.teal,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              profile.name,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            if (profile.bloodGroup != null)
-              Chip(
-                label: Text('Blood: ${profile.bloodGroup}'),
-                backgroundColor: AppTheme.chipBg,
-                side: BorderSide.none,
-              ),
-            const SizedBox(height: 8),
-
-            // BMI Card
-            if (profile.bmi != null) _buildBmiCard(profile),
-            const SizedBox(height: 16),
-
-            // Health Conditions
-            if (profile.healthConditions.isNotEmpty) ...[
-              _sectionTitle('🏥 Health Conditions'),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children:
-                    profile.healthConditions
-                        .map(
-                          (c) => Chip(
-                            label: Text(
-                              c,
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            backgroundColor: AppTheme.teal.withValues(
-                              alpha: 0.15,
-                            ),
-                            side: BorderSide(
-                              color: AppTheme.teal.withValues(alpha: 0.3),
-                            ),
-                          ),
-                        )
-                        .toList(),
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            // Allergies
-            if (profile.allergies.isNotEmpty) ...[
-              _sectionTitle('⚠️ Allergies'),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children:
-                    profile.allergies
-                        .map(
-                          (a) => Chip(
-                            label: Text(
-                              a,
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            backgroundColor: Colors.redAccent.withValues(
-                              alpha: 0.15,
-                            ),
-                            side: BorderSide(
-                              color: Colors.redAccent.withValues(alpha: 0.3),
-                            ),
-                          ),
-                        )
-                        .toList(),
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            // Emergency Contact
-            if (profile.emergencyContactName != null) ...[
-              _sectionTitle('🆘 Emergency Contact'),
-              const SizedBox(height: 8),
+    return NebulaBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          title: const Text('Profile'),
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+          child: Column(
+            children: [
+              // Avatar with gradient border + glow
               Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: AppTheme.bgCard,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: Colors.redAccent.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                  gradient: AppTheme.accentGradient,
+                  boxShadow: AppTheme.glow(
+                    AppTheme.electricBlue,
+                    blur: 20,
+                    spread: 2,
                   ),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.emergency,
-                      color: Colors.redAccent,
-                      size: 24,
+                child: CircleAvatar(
+                  radius: 44,
+                  backgroundColor: AppTheme.bgPrimary,
+                  child: Text(
+                    profile.name.isNotEmpty
+                        ? profile.name[0].toUpperCase()
+                        : '?',
+                    style: const TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.electricBlue,
                     ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          profile.emergencyContactName!,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        if (profile.emergencyContactPhone != null)
-                          Text(
-                            profile.emergencyContactPhone!,
-                            style: const TextStyle(
-                              color: AppTheme.grey,
-                              fontSize: 13,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
-            ],
-
-            const Divider(color: AppTheme.chipBg, height: 32),
-
-            // Editable fields
-            _field('Name', _nameCtrl, Icons.person, required: true),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: _field(
-                    'Age',
-                    _ageCtrl,
-                    Icons.cake,
-                    keyboardType: TextInputType.number,
+              const SizedBox(height: 10),
+              Text(
+                profile.name,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (profile.bloodGroup != null) ...[
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.radiantPink.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppTheme.radiantPink.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Text(
+                    'Blood: ${profile.bloodGroup}',
+                    style: const TextStyle(
+                      color: AppTheme.radiantPink,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              ],
+              const SizedBox(height: 16),
+
+              // BMI Card
+              if (profile.bmi != null) _buildBmiCard(profile),
+              const SizedBox(height: 16),
+
+              // Health Conditions
+              if (profile.healthConditions.isNotEmpty) ...[
+                _sectionLabel('HEALTH CONDITIONS', color: AppTheme.neonGreen),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children:
+                      profile.healthConditions
+                          .map(
+                            (c) => Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.neonGreen.withValues(
+                                  alpha: 0.15,
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: AppTheme.neonGreen.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                c,
+                                style: const TextStyle(
+                                  color: AppTheme.neonGreen,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // Allergies
+              if (profile.allergies.isNotEmpty) ...[
+                _sectionLabel('ALLERGIES', color: AppTheme.vividOrange),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children:
+                      profile.allergies
+                          .map(
+                            (a) => Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.vividOrange.withValues(
+                                  alpha: 0.15,
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: AppTheme.vividOrange.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                a,
+                                style: const TextStyle(
+                                  color: AppTheme.vividOrange,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // Emergency Contact
+              if (profile.emergencyContactName != null) ...[
+                _sectionLabel('EMERGENCY CONTACT', color: AppTheme.radiantPink),
+                const SizedBox(height: 10),
+                GlassCard(
+                  borderColor: AppTheme.radiantPink.withValues(alpha: 0.3),
+                  child: Row(
                     children: [
-                      const Text(
-                        'Gender',
-                        style: TextStyle(
-                          color: AppTheme.teal,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: AppTheme.bgCardLight,
+                          color: AppTheme.radiantPink.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _gender,
-                            isExpanded: true,
-                            dropdownColor: AppTheme.bgCardLight,
-                            items:
-                                ['Male', 'Female', 'Other', 'Prefer not to say']
-                                    .map(
-                                      (g) => DropdownMenuItem(
-                                        value: g,
-                                        child: Text(g),
-                                      ),
-                                    )
-                                    .toList(),
-                            onChanged: (v) => setState(() => _gender = v!),
-                          ),
+                        child: const Icon(
+                          Icons.emergency_rounded,
+                          color: AppTheme.radiantPink,
+                          size: 22,
                         ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            profile.emergencyContactName!,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          if (profile.emergencyContactPhone != null)
+                            Text(
+                              profile.emergencyContactPhone!,
+                              style: const TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 13,
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
               ],
-            ),
-            const SizedBox(height: 14),
-            _label('Blood Group'),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children:
-                  kBloodGroups.map((bg) {
-                    final s = _bloodGroup == bg;
-                    return ChoiceChip(
-                      label: Text(bg),
-                      selected: s,
-                      onSelected: (_) => setState(() => _bloodGroup = bg),
-                      selectedColor: AppTheme.teal,
-                      backgroundColor: AppTheme.chipBg,
-                      labelStyle: TextStyle(
-                        color: s ? Colors.white : AppTheme.greyLight,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(
-                          color:
-                              s
-                                  ? AppTheme.teal
-                                  : AppTheme.teal.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      showCheckmark: false,
-                    );
-                  }).toList(),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: _field(
-                    'Height (cm)',
-                    _heightCtrl,
-                    Icons.height,
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _field(
-                    'Weight (kg)',
-                    _weightCtrl,
-                    Icons.monitor_weight,
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            _field(
-              'Phone',
-              _phoneCtrl,
-              Icons.phone,
-              keyboardType: TextInputType.phone,
-            ),
-            const SizedBox(height: 14),
-            _field(
-              'Email',
-              _emailCtrl,
-              Icons.email,
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 14),
-            _field('Emergency Name', _emergNameCtrl, Icons.emergency),
-            const SizedBox(height: 14),
-            _field(
-              'Emergency Phone',
-              _emergPhoneCtrl,
-              Icons.phone_callback,
-              keyboardType: TextInputType.phone,
-            ),
-            const SizedBox(height: 24),
 
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _save,
-                icon: const Icon(Icons.save, size: 20),
-                label: const Text('Save Identity'),
+              // Divider
+              Container(
+                height: 1,
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.transparent,
+                      AppTheme.glassBorder,
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-          ],
+              const SizedBox(height: 8),
+
+              // Editable fields
+              _sectionLabel('PERSONAL INFORMATION'),
+              const SizedBox(height: 12),
+              _field('Name', _nameCtrl, Icons.person_rounded),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: _field(
+                      'Age',
+                      _ageCtrl,
+                      Icons.cake_rounded,
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _smallLabel('Gender'),
+                        const SizedBox(height: 6),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.glassWhite,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: AppTheme.glassBorder),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: _gender,
+                                  isExpanded: true,
+                                  dropdownColor: AppTheme.bgSecondary,
+                                  items:
+                                      [
+                                            'Male',
+                                            'Female',
+                                            'Other',
+                                            'Prefer not to say',
+                                          ]
+                                          .map(
+                                            (g) => DropdownMenuItem(
+                                              value: g,
+                                              child: Text(g),
+                                            ),
+                                          )
+                                          .toList(),
+                                  onChanged:
+                                      (v) => setState(() => _gender = v!),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              // Blood group chips
+              _sectionLabel('BLOOD GROUP', color: AppTheme.radiantPink),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children:
+                    kBloodGroups.map((bg) {
+                      final s = _bloodGroup == bg;
+                      return ChoiceChip(
+                        label: Text(bg),
+                        selected: s,
+                        onSelected: (_) => setState(() => _bloodGroup = bg),
+                        selectedColor: AppTheme.radiantPink.withValues(
+                          alpha: 0.25,
+                        ),
+                        backgroundColor: AppTheme.glassWhite,
+                        labelStyle: TextStyle(
+                          color:
+                              s ? AppTheme.radiantPink : AppTheme.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(
+                            color:
+                                s ? AppTheme.radiantPink : AppTheme.glassBorder,
+                          ),
+                        ),
+                        showCheckmark: false,
+                      );
+                    }).toList(),
+              ),
+              const SizedBox(height: 14),
+
+              // Height / Weight
+              _sectionLabel('BODY METRICS', color: AppTheme.neonGreen),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: _field(
+                      'Height (cm)',
+                      _heightCtrl,
+                      Icons.height_rounded,
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _field(
+                      'Weight (kg)',
+                      _weightCtrl,
+                      Icons.monitor_weight_rounded,
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              // Contact
+              _sectionLabel('CONTACT', color: AppTheme.vividOrange),
+              const SizedBox(height: 10),
+              _field(
+                'Phone',
+                _phoneCtrl,
+                Icons.phone_rounded,
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 14),
+              _field(
+                'Email',
+                _emailCtrl,
+                Icons.email_rounded,
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 14),
+
+              // Emergency
+              _sectionLabel('EMERGENCY', color: AppTheme.radiantPink),
+              const SizedBox(height: 10),
+              _field('Emergency Name', _emergNameCtrl, Icons.emergency_rounded),
+              const SizedBox(height: 14),
+              _field(
+                'Emergency Phone',
+                _emergPhoneCtrl,
+                Icons.phone_callback_rounded,
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 28),
+
+              // Save button
+              SizedBox(
+                width: double.infinity,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    gradient: AppTheme.accentGradient,
+                    boxShadow: AppTheme.glow(AppTheme.electricBlue, blur: 16),
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: _save,
+                    icon: const Icon(Icons.save_rounded, size: 20),
+                    label: const Text('Save Profile'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -363,91 +505,91 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final cat = p.bmiCategory;
     Color bmiColor;
     if (bmi < 18.5) {
-      bmiColor = Colors.blue;
+      bmiColor = AppTheme.electricBlue;
     } else if (bmi < 25) {
-      bmiColor = AppTheme.teal;
+      bmiColor = AppTheme.neonGreen;
     } else if (bmi < 30) {
-      bmiColor = Colors.orange;
+      bmiColor = AppTheme.vividOrange;
     } else {
-      bmiColor = Colors.redAccent;
+      bmiColor = AppTheme.radiantPink;
     }
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.bgCard,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: bmiColor.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: bmiColor.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(
-                bmi.toStringAsFixed(1),
-                style: TextStyle(
-                  color: bmiColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-            ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.glassWhite,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: bmiColor.withValues(alpha: 0.3)),
           ),
-          const SizedBox(width: 14),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              const Text(
-                'BMI',
-                style: TextStyle(color: AppTheme.grey, fontSize: 12),
-              ),
-              Text(
-                cat,
-                style: TextStyle(
-                  color: bmiColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [bmiColor, bmiColor.withValues(alpha: 0.6)],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: AppTheme.glow(bmiColor, blur: 12),
+                ),
+                child: Center(
+                  child: Text(
+                    bmi.toStringAsFixed(1),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
                 ),
               ),
-              Text(
-                '${p.height?.toInt() ?? 0} cm · ${p.weight?.toInt() ?? 0} kg',
-                style: const TextStyle(color: AppTheme.grey, fontSize: 12),
+              const SizedBox(width: 14),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'BMI',
+                    style: TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                  Text(
+                    cat,
+                    style: TextStyle(
+                      color: bmiColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text(
+                    '${p.height?.toInt() ?? 0} cm · ${p.weight?.toInt() ?? 0} kg',
+                    style: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _sectionTitle(String t) => Align(
-    alignment: Alignment.centerLeft,
-    child: Text(
-      t,
-      style: const TextStyle(
-        color: AppTheme.grey,
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-      ),
-    ),
-  );
-
-  Widget _label(String t) => Align(
-    alignment: Alignment.centerLeft,
-    child: Text(
-      t,
-      style: const TextStyle(
-        color: AppTheme.teal,
-        fontWeight: FontWeight.w600,
-        fontSize: 14,
-      ),
+  Widget _smallLabel(String t) => Text(
+    t,
+    style: const TextStyle(
+      color: AppTheme.electricBlue,
+      fontWeight: FontWeight.w600,
+      fontSize: 13,
     ),
   );
 
@@ -455,26 +597,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     String label,
     TextEditingController ctrl,
     IconData icon, {
-    bool required = false,
     TextInputType? keyboardType,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: AppTheme.teal,
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
-        ),
+        _smallLabel(label),
         const SizedBox(height: 6),
         TextField(
           controller: ctrl,
           keyboardType: keyboardType,
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: AppTheme.grey, size: 20),
+            prefixIcon: Icon(icon, color: AppTheme.textSecondary, size: 20),
             hintText: label,
           ),
         ),
@@ -520,8 +654,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         );
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Identity secured.'),
-        backgroundColor: AppTheme.teal,
+        content: const Text('Profile saved'),
+        backgroundColor: AppTheme.electricBlue,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),

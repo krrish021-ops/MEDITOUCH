@@ -1,11 +1,15 @@
-/// Add / Edit Medicine screen matching design screenshot 4.
+/// Add / Edit Medicine — glassmorphic form fields, gradient save button,
+/// accent-colored time chips, nebula background.
 library;
 
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
+import '../widgets/nebula_background.dart';
+import '../widgets/glass_card.dart';
 
 class AddMedicineScreen extends ConsumerStatefulWidget {
   final Medicine? editMedicine;
@@ -94,318 +98,402 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
     Navigator.pop(context);
   }
 
-  Widget _label(String t) => Text(
-    t,
-    style: const TextStyle(
-      color: AppTheme.teal,
-      fontWeight: FontWeight.w600,
-      fontSize: 14,
-    ),
-  );
+  Widget _sectionLabel(String t, {Color color = AppTheme.electricBlue}) {
+    return Row(
+      children: [
+        Container(
+          width: 3,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+            boxShadow: AppTheme.glow(color, blur: 5),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          t,
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.bgDark,
-      appBar: AppBar(
-        backgroundColor: AppTheme.bgDark,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          widget.editMedicine != null
-              ? 'Modify Guard Directive'
-              : 'Prescribe Guard',
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.help_outline, color: AppTheme.grey),
-            onPressed:
-                () => showDialog(
-                  context: context,
-                  builder:
-                      (_) => AlertDialog(
-                        title: const Text('Help'),
-                        content: const Text(
-                          'Fill in name and dosage (required). Choose form, frequency, set reminder times. Toggle food preference and add notes.',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Got it'),
-                          ),
-                        ],
-                      ),
-                ),
+    return NebulaBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () => Navigator.pop(context),
           ),
-        ],
-      ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _label('Guard Name'), const SizedBox(height: 6),
-              TextFormField(
-                controller: _nameCtrl,
-                decoration: InputDecoration(
-                  hintText: 'e.g. Paracetamol',
-                  suffixIcon: Icon(
-                    Icons.medication,
-                    color: AppTheme.grey.withValues(alpha: 0.5),
+          title: Text(
+            widget.editMedicine != null ? 'Edit Medicine' : 'Add Medicine',
+          ),
+        ),
+        body: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Name
+                _sectionLabel('Medicine Name'),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _nameCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'e.g. Paracetamol',
+                    suffixIcon: Icon(
+                      Icons.medication_rounded,
+                      color: AppTheme.textSecondary.withValues(alpha: 0.5),
+                    ),
                   ),
+                  validator:
+                      (v) =>
+                          (v == null || v.trim().isEmpty) ? 'Required' : null,
                 ),
-                validator:
-                    (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
-              ),
-              const SizedBox(height: 18),
-              _label('Dosage'), const SizedBox(height: 6),
-              TextFormField(
-                controller: _dosageCtrl,
-                decoration: InputDecoration(
-                  hintText: 'e.g. 500 mg',
-                  suffixIcon: Icon(
-                    Icons.straighten,
-                    color: AppTheme.grey.withValues(alpha: 0.5),
+                const SizedBox(height: 20),
+
+                // Dosage
+                _sectionLabel('Dosage', color: AppTheme.neonGreen),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _dosageCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'e.g. 500 mg',
+                    suffixIcon: Icon(
+                      Icons.straighten_rounded,
+                      color: AppTheme.textSecondary.withValues(alpha: 0.5),
+                    ),
                   ),
+                  validator:
+                      (v) =>
+                          (v == null || v.trim().isEmpty) ? 'Required' : null,
                 ),
-                validator:
-                    (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
-              ),
-              const SizedBox(height: 18),
-              // Form & Frequency
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _label('Form'),
-                        const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: AppTheme.bgCardLight,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _form,
-                              isExpanded: true,
-                              dropdownColor: AppTheme.bgCardLight,
-                              items:
-                                  _forms
-                                      .map(
-                                        (f) => DropdownMenuItem(
-                                          value: f,
-                                          child: Text(f),
-                                        ),
-                                      )
-                                      .toList(),
-                              onChanged: (v) => setState(() => _form = v!),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _label('Frequency'),
-                        const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: AppTheme.bgCardLight,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _freq,
-                              isExpanded: true,
-                              dropdownColor: AppTheme.bgCardLight,
-                              items:
-                                  _freqs
-                                      .map(
-                                        (f) => DropdownMenuItem(
-                                          value: f,
-                                          child: Text(f),
-                                        ),
-                                      )
-                                      .toList(),
-                              onChanged: (v) => setState(() => _freq = v!),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              // Reminder Times
-              Row(
-                children: [
-                  _label('Reminder Times'),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: _pickTime,
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.add_circle_outline,
-                          color: AppTheme.teal,
-                          size: 18,
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          'Add Time',
-                          style: TextStyle(
-                            color: AppTheme.teal,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 10,
-                runSpacing: 8,
-                children: [
-                  ..._times.map(
-                    (t) => Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.teal,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            t,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          GestureDetector(
-                            onTap: () => setState(() => _times.remove(t)),
-                            child: const Icon(
-                              Icons.close,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: _pickTime,
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppTheme.teal.withValues(alpha: 0.5),
-                          width: 1.5,
-                        ),
-                        color: AppTheme.chipBg,
-                      ),
-                      child: const Icon(
-                        Icons.access_time,
-                        color: AppTheme.teal,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              // Take with food
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: AppTheme.bgCard,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(
+                const SizedBox(height: 20),
+
+                // Form & Frequency dropdowns in glass cards
+                Row(
                   children: [
-                    const Icon(Icons.restaurant, color: AppTheme.teal),
-                    const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Take with food?',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                            ),
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            'Better absorption with meals',
-                            style: TextStyle(
-                              color: AppTheme.grey,
-                              fontSize: 12,
+                          _sectionLabel('Form', color: AppTheme.vividOrange),
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.glassWhite,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: AppTheme.glassBorder,
+                                  ),
+                                ),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: _form,
+                                    isExpanded: true,
+                                    dropdownColor: AppTheme.bgSecondary,
+                                    items:
+                                        _forms
+                                            .map(
+                                              (f) => DropdownMenuItem(
+                                                value: f,
+                                                child: Text(f),
+                                              ),
+                                            )
+                                            .toList(),
+                                    onChanged:
+                                        (v) => setState(() => _form = v!),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Switch(
-                      value: _withFood,
-                      onChanged: (v) => setState(() => _withFood = v),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _sectionLabel(
+                            'Frequency',
+                            color: AppTheme.radiantPink,
+                          ),
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.glassWhite,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: AppTheme.glassBorder,
+                                  ),
+                                ),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: _freq,
+                                    isExpanded: true,
+                                    dropdownColor: AppTheme.bgSecondary,
+                                    items:
+                                        _freqs
+                                            .map(
+                                              (f) => DropdownMenuItem(
+                                                value: f,
+                                                child: Text(
+                                                  f,
+                                                  style: const TextStyle(
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                            .toList(),
+                                    onChanged:
+                                        (v) => setState(() => _freq = v!),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 18),
-              _label('Additional Notes'), const SizedBox(height: 6),
-              TextFormField(
-                controller: _notesCtrl,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: 'e.g. Do not take with caffeine...',
+                const SizedBox(height: 22),
+
+                // Reminder Times
+                Row(
+                  children: [
+                    _sectionLabel('Reminder Times'),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: _pickTime,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: AppTheme.accentGradient,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: AppTheme.glow(
+                            AppTheme.electricBlue,
+                            blur: 8,
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.add_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'Add',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _save,
-                  icon: const Icon(Icons.save, size: 20),
-                  label: Text(
-                    widget.editMedicine != null
-                        ? 'Update Directive'
-                        : 'Secure Protocol',
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 8,
+                  children: [
+                    ..._times.asMap().entries.map((e) {
+                      final idx = e.key;
+                      final t = e.value;
+                      final colors = [
+                        AppTheme.electricBlue,
+                        AppTheme.neonGreen,
+                        AppTheme.vividOrange,
+                        AppTheme.radiantPink,
+                      ];
+                      final c = colors[idx % colors.length];
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [c, c.withValues(alpha: 0.7)],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: AppTheme.glow(c, blur: 8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              t,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            GestureDetector(
+                              onTap: () => setState(() => _times.remove(t)),
+                              child: const Icon(
+                                Icons.close_rounded,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                    GestureDetector(
+                      onTap: _pickTime,
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.glassWhite,
+                          border: Border.all(color: AppTheme.glassBorder),
+                        ),
+                        child: const Icon(
+                          Icons.access_time_rounded,
+                          color: AppTheme.electricBlue,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Take with food glass card
+                GlassCard(
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppTheme.neonGreen.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.restaurant_rounded,
+                          color: AppTheme.neonGreen,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Take with food?',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Better absorption with meals',
+                              style: TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: _withFood,
+                        onChanged: (v) => setState(() => _withFood = v),
+                        activeTrackColor: AppTheme.neonGreen,
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 20),
+
+                // Notes
+                _sectionLabel(
+                  'Additional Notes',
+                  color: AppTheme.textSecondary,
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _notesCtrl,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    hintText: 'e.g. Do not take with caffeine...',
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Save button
+                SizedBox(
+                  width: double.infinity,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      gradient: AppTheme.accentGradient,
+                      boxShadow: AppTheme.glow(AppTheme.electricBlue, blur: 16),
+                    ),
+                    child: ElevatedButton.icon(
+                      onPressed: _save,
+                      icon: const Icon(Icons.save_rounded, size: 20),
+                      label: Text(
+                        widget.editMedicine != null
+                            ? 'Update Medicine'
+                            : 'Save Medicine',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
       ),

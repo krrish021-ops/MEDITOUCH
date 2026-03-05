@@ -1,9 +1,12 @@
-// Multi-step onboarding flow collecting personal details, diseases, and allergies.
+// Multi-step onboarding flow with glassmorphic design, gradient accents,
+// neon progress bar, and animated transitions.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
+import '../widgets/nebula_background.dart';
+import '../widgets/glass_card.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   final VoidCallback onComplete;
@@ -13,10 +16,13 @@ class OnboardingScreen extends ConsumerStatefulWidget {
   ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
+    with SingleTickerProviderStateMixin {
   final _pageCtrl = PageController();
   int _currentPage = 0;
   final int _totalPages = 4;
+
+  late final AnimationController _progressAnim;
 
   // Step 1: Personal details
   final _nameCtrl = TextEditingController();
@@ -40,8 +46,33 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final Set<String> _selectedAllergies = {};
   final _customAllergyCtrl = TextEditingController();
 
+  // Accent per step
+  static const _stepAccents = [
+    AppTheme.electricBlue,
+    AppTheme.neonGreen,
+    AppTheme.vividOrange,
+    AppTheme.radiantPink,
+  ];
+
+  static const _stepIcons = [
+    Icons.person_rounded,
+    Icons.monitor_heart_rounded,
+    Icons.local_hospital_rounded,
+    Icons.warning_amber_rounded,
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _progressAnim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+  }
+
   @override
   void dispose() {
+    _progressAnim.dispose();
     _pageCtrl.dispose();
     _nameCtrl.dispose();
     _ageCtrl.dispose();
@@ -59,14 +90,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   void _next() {
     if (_currentPage == 0 && _nameCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your name to continue')),
+        SnackBar(
+          content: const Text('Please enter your name to continue'),
+          backgroundColor: AppTheme.radiantPink,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
       );
       return;
     }
     if (_currentPage < _totalPages - 1) {
       _pageCtrl.nextPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOutCubic,
       );
       setState(() => _currentPage++);
     } else {
@@ -77,8 +115,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   void _back() {
     if (_currentPage > 0) {
       _pageCtrl.previousPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOutCubic,
       );
       setState(() => _currentPage--);
     }
@@ -110,6 +148,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     widget.onComplete();
   }
 
+  Color get _accent => _stepAccents[_currentPage];
+
   @override
   Widget build(BuildContext context) {
     final stepLabels = [
@@ -118,86 +158,139 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       'Health Conditions',
       'Allergies',
     ];
-    return Scaffold(
-      backgroundColor: AppTheme.bgDark,
-      appBar: AppBar(
-        backgroundColor: AppTheme.bgDark,
-        leading:
-            _currentPage > 0
-                ? IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: _back,
-                )
-                : null,
-        title: Text(stepLabels[_currentPage]),
-        actions: [
-          if (_currentPage >= 2)
-            TextButton(
-              onPressed: _finish,
-              child: const Text('Skip', style: TextStyle(color: AppTheme.teal)),
-            ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Progress indicator
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Row(
-              children: List.generate(_totalPages, (i) {
-                return Expanded(
-                  child: Container(
-                    height: 4,
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
-                    decoration: BoxDecoration(
-                      color:
-                          i <= _currentPage ? AppTheme.teal : AppTheme.chipBg,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                );
-              }),
-            ),
+    return NebulaBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          leading:
+              _currentPage > 0
+                  ? IconButton(
+                    icon: const Icon(Icons.arrow_back_rounded),
+                    onPressed: _back,
+                  )
+                  : null,
+          title: Row(
+            children: [
+              Icon(_stepIcons[_currentPage], color: _accent, size: 22),
+              const SizedBox(width: 8),
+              Text(stepLabels[_currentPage]),
+            ],
           ),
-          Text(
-            'Step ${_currentPage + 1} of $_totalPages',
-            style: const TextStyle(color: AppTheme.grey, fontSize: 12),
-          ),
-          const SizedBox(height: 8),
-          // Pages
-          Expanded(
-            child: PageView(
-              controller: _pageCtrl,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _buildPersonalPage(),
-                _buildBodyPage(),
-                _buildConditionsPage(),
-                _buildAllergiesPage(),
-              ],
-            ),
-          ),
-          // Continue button
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _next,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
+          actions: [
+            if (_currentPage >= 2)
+              TextButton(
+                onPressed: _finish,
                 child: Text(
-                  _currentPage < _totalPages - 1 ? 'Continue' : 'Get Started',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                  'Skip',
+                  style: TextStyle(color: _accent, fontWeight: FontWeight.w600),
+                ),
+              ),
+          ],
+        ),
+        body: Column(
+          children: [
+            // --- Neon progress bar ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Row(
+                children: List.generate(_totalPages, (i) {
+                  final done = i <= _currentPage;
+                  return Expanded(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 400),
+                      height: 4,
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(4),
+                        gradient:
+                            done
+                                ? LinearGradient(
+                                  colors: [
+                                    _stepAccents[i],
+                                    i < _totalPages - 1
+                                        ? _stepAccents[i + 1]
+                                        : _stepAccents[i],
+                                  ],
+                                )
+                                : null,
+                        color: done ? null : AppTheme.glassWhite,
+                        boxShadow:
+                            done
+                                ? [
+                                  BoxShadow(
+                                    color: _stepAccents[i].withValues(
+                                      alpha: 0.5,
+                                    ),
+                                    blurRadius: 6,
+                                  ),
+                                ]
+                                : null,
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+            Text(
+              'Step ${_currentPage + 1} of $_totalPages',
+              style: TextStyle(color: _accent, fontSize: 12),
+            ),
+            const SizedBox(height: 8),
+            // Pages
+            Expanded(
+              child: PageView(
+                controller: _pageCtrl,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _buildPersonalPage(),
+                  _buildBodyPage(),
+                  _buildConditionsPage(),
+                  _buildAllergiesPage(),
+                ],
+              ),
+            ),
+            // Continue button with gradient
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+              child: SizedBox(
+                width: double.infinity,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: LinearGradient(
+                      colors: [
+                        _accent,
+                        _currentPage < _totalPages - 1
+                            ? _stepAccents[_currentPage + 1]
+                            : AppTheme.electricBlue,
+                      ],
+                    ),
+                    boxShadow: AppTheme.glow(_accent, blur: 16),
+                  ),
+                  child: ElevatedButton(
+                    onPressed: _next,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: Text(
+                      _currentPage < _totalPages - 1
+                          ? 'Continue'
+                          : 'Get Started',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -210,7 +303,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _header(
-            '👤',
+            Icons.person_rounded,
+            AppTheme.electricBlue,
             'Tell us about yourself',
             'We\'ll personalize your health experience',
           ),
@@ -221,7 +315,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             controller: _nameCtrl,
             decoration: const InputDecoration(
               hintText: 'Enter your full name',
-              prefixIcon: Icon(Icons.person_outline, color: AppTheme.grey),
+              prefixIcon: Icon(
+                Icons.person_outline,
+                color: AppTheme.textSecondary,
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -240,7 +337,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         hintText: 'Age',
                         prefixIcon: Icon(
                           Icons.cake_outlined,
-                          color: AppTheme.grey,
+                          color: AppTheme.textSecondary,
                         ),
                       ),
                     ),
@@ -257,14 +354,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                        color: AppTheme.bgCardLight,
-                        borderRadius: BorderRadius.circular(12),
+                        color: AppTheme.glassWhite,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppTheme.glassBorder),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: _gender,
                           isExpanded: true,
-                          dropdownColor: AppTheme.bgCardLight,
+                          dropdownColor: AppTheme.bgSecondary,
                           items:
                               ['Male', 'Female', 'Other']
                                   .map(
@@ -296,19 +394,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     label: Text(bg),
                     selected: sel,
                     onSelected: (_) => setState(() => _bloodGroup = bg),
-                    selectedColor: AppTheme.teal,
-                    backgroundColor: AppTheme.chipBg,
+                    selectedColor: AppTheme.electricBlue,
+                    backgroundColor: AppTheme.glassWhite,
                     labelStyle: TextStyle(
-                      color: sel ? Colors.white : AppTheme.greyLight,
+                      color: sel ? Colors.white : AppTheme.textSecondary,
                       fontWeight: FontWeight.w600,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                       side: BorderSide(
                         color:
-                            sel
-                                ? AppTheme.teal
-                                : AppTheme.teal.withValues(alpha: 0.3),
+                            sel ? AppTheme.electricBlue : AppTheme.glassBorder,
                       ),
                     ),
                     showCheckmark: false,
@@ -323,7 +419,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             keyboardType: TextInputType.phone,
             decoration: const InputDecoration(
               hintText: 'Phone number',
-              prefixIcon: Icon(Icons.phone_outlined, color: AppTheme.grey),
+              prefixIcon: Icon(
+                Icons.phone_outlined,
+                color: AppTheme.textSecondary,
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -334,7 +433,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             keyboardType: TextInputType.emailAddress,
             decoration: const InputDecoration(
               hintText: 'Email address',
-              prefixIcon: Icon(Icons.email_outlined, color: AppTheme.grey),
+              prefixIcon: Icon(
+                Icons.email_outlined,
+                color: AppTheme.textSecondary,
+              ),
             ),
           ),
         ],
@@ -350,7 +452,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _header(
-            '📏',
+            Icons.monitor_heart_rounded,
+            AppTheme.neonGreen,
             'Body Measurements',
             'Used for BMI and health insights',
           ),
@@ -389,7 +492,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ],
           ),
           const SizedBox(height: 28),
-          _header('🆘', 'Emergency Contact', 'In case of medical emergency'),
+          _header(
+            Icons.emergency_rounded,
+            AppTheme.radiantPink,
+            'Emergency Contact',
+            'In case of medical emergency',
+          ),
           const SizedBox(height: 16),
           _label('Contact Name'),
           const SizedBox(height: 6),
@@ -397,7 +505,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             controller: _emergNameCtrl,
             decoration: const InputDecoration(
               hintText: 'Emergency contact name',
-              prefixIcon: Icon(Icons.person_outline, color: AppTheme.grey),
+              prefixIcon: Icon(
+                Icons.person_outline,
+                color: AppTheme.textSecondary,
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -408,7 +519,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             keyboardType: TextInputType.phone,
             decoration: const InputDecoration(
               hintText: 'Emergency contact phone',
-              prefixIcon: Icon(Icons.phone_outlined, color: AppTheme.grey),
+              prefixIcon: Icon(
+                Icons.phone_outlined,
+                color: AppTheme.textSecondary,
+              ),
             ),
           ),
         ],
@@ -424,7 +538,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _header(
-            '🏥',
+            Icons.local_hospital_rounded,
+            AppTheme.vividOrange,
             'Health Conditions',
             'Select any conditions you have (optional)',
           ),
@@ -444,20 +559,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               ? _selectedConditions.add(c)
                               : _selectedConditions.remove(c);
                         }),
-                    selectedColor: AppTheme.teal,
-                    backgroundColor: AppTheme.chipBg,
-                    checkmarkColor: Colors.white,
+                    selectedColor: AppTheme.vividOrange.withValues(alpha: 0.3),
+                    backgroundColor: AppTheme.glassWhite,
+                    checkmarkColor: AppTheme.vividOrange,
                     labelStyle: TextStyle(
-                      color: sel ? Colors.white : AppTheme.greyLight,
+                      color:
+                          sel ? AppTheme.vividOrange : AppTheme.textSecondary,
                       fontSize: 13,
+                      fontWeight: sel ? FontWeight.w600 : FontWeight.normal,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                       side: BorderSide(
                         color:
-                            sel
-                                ? AppTheme.teal
-                                : AppTheme.teal.withValues(alpha: 0.2),
+                            sel ? AppTheme.vividOrange : AppTheme.glassBorder,
                       ),
                     ),
                   );
@@ -475,29 +590,48 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              IconButton(
-                onPressed: () {
-                  final v = _customConditionCtrl.text.trim();
-                  if (v.isNotEmpty) {
-                    setState(() => _selectedConditions.add(v));
-                    _customConditionCtrl.clear();
-                  }
-                },
-                icon: const Icon(
-                  Icons.add_circle,
-                  color: AppTheme.teal,
-                  size: 32,
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: AppTheme.glow(AppTheme.vividOrange, blur: 10),
+                ),
+                child: IconButton(
+                  onPressed: () {
+                    final v = _customConditionCtrl.text.trim();
+                    if (v.isNotEmpty) {
+                      setState(() => _selectedConditions.add(v));
+                      _customConditionCtrl.clear();
+                    }
+                  },
+                  icon: const Icon(
+                    Icons.add_circle,
+                    color: AppTheme.vividOrange,
+                    size: 32,
+                  ),
                 ),
               ),
             ],
           ),
           if (_selectedConditions.isNotEmpty) ...[
             const SizedBox(height: 16),
-            Text(
-              'Selected: ${_selectedConditions.length}',
-              style: const TextStyle(
-                color: AppTheme.teal,
-                fontWeight: FontWeight.w600,
+            GlassCard(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle_outline,
+                    color: AppTheme.vividOrange,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Selected: ${_selectedConditions.length}',
+                    style: const TextStyle(
+                      color: AppTheme.vividOrange,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -513,7 +647,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _header('⚠️', 'Allergies', 'Select any known allergies (optional)'),
+          _header(
+            Icons.warning_amber_rounded,
+            AppTheme.radiantPink,
+            'Allergies',
+            'Select any known allergies (optional)',
+          ),
           const SizedBox(height: 20),
           Wrap(
             spacing: 8,
@@ -530,20 +669,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               ? _selectedAllergies.add(a)
                               : _selectedAllergies.remove(a);
                         }),
-                    selectedColor: AppTheme.teal,
-                    backgroundColor: AppTheme.chipBg,
-                    checkmarkColor: Colors.white,
+                    selectedColor: AppTheme.radiantPink.withValues(alpha: 0.3),
+                    backgroundColor: AppTheme.glassWhite,
+                    checkmarkColor: AppTheme.radiantPink,
                     labelStyle: TextStyle(
-                      color: sel ? Colors.white : AppTheme.greyLight,
+                      color:
+                          sel ? AppTheme.radiantPink : AppTheme.textSecondary,
                       fontSize: 13,
+                      fontWeight: sel ? FontWeight.w600 : FontWeight.normal,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                       side: BorderSide(
                         color:
-                            sel
-                                ? AppTheme.teal
-                                : AppTheme.teal.withValues(alpha: 0.2),
+                            sel ? AppTheme.radiantPink : AppTheme.glassBorder,
                       ),
                     ),
                   );
@@ -561,29 +700,48 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              IconButton(
-                onPressed: () {
-                  final v = _customAllergyCtrl.text.trim();
-                  if (v.isNotEmpty) {
-                    setState(() => _selectedAllergies.add(v));
-                    _customAllergyCtrl.clear();
-                  }
-                },
-                icon: const Icon(
-                  Icons.add_circle,
-                  color: AppTheme.teal,
-                  size: 32,
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: AppTheme.glow(AppTheme.radiantPink, blur: 10),
+                ),
+                child: IconButton(
+                  onPressed: () {
+                    final v = _customAllergyCtrl.text.trim();
+                    if (v.isNotEmpty) {
+                      setState(() => _selectedAllergies.add(v));
+                      _customAllergyCtrl.clear();
+                    }
+                  },
+                  icon: const Icon(
+                    Icons.add_circle,
+                    color: AppTheme.radiantPink,
+                    size: 32,
+                  ),
                 ),
               ),
             ],
           ),
           if (_selectedAllergies.isNotEmpty) ...[
             const SizedBox(height: 16),
-            Text(
-              'Selected: ${_selectedAllergies.length}',
-              style: const TextStyle(
-                color: AppTheme.teal,
-                fontWeight: FontWeight.w600,
+            GlassCard(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle_outline,
+                    color: AppTheme.radiantPink,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Selected: ${_selectedAllergies.length}',
+                    style: const TextStyle(
+                      color: AppTheme.radiantPink,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -592,35 +750,56 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  Widget _header(String emoji, String title, String subtitle) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(emoji, style: const TextStyle(fontSize: 40)),
-        const SizedBox(height: 8),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+  Widget _header(IconData icon, Color accent, String title, String subtitle) {
+    return GlassCard(
+      borderColor: accent.withValues(alpha: 0.3),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [accent, accent.withValues(alpha: 0.4)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: AppTheme.glow(accent, blur: 12),
+            ),
+            child: Icon(icon, color: Colors.white, size: 28),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          subtitle,
-          style: const TextStyle(color: AppTheme.grey, fontSize: 14),
-        ),
-      ],
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _label(String t) => Text(
     t,
-    style: const TextStyle(
-      color: AppTheme.teal,
-      fontWeight: FontWeight.w600,
-      fontSize: 14,
-    ),
+    style: TextStyle(color: _accent, fontWeight: FontWeight.w600, fontSize: 14),
   );
 }

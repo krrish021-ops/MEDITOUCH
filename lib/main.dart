@@ -1,5 +1,6 @@
 ﻿// Smart Health Reminder app entry point.
 // Splash → Onboarding (if first time) → Main app with bottom navigation.
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'theme/app_theme.dart';
@@ -10,7 +11,6 @@ import 'screens/home_screen.dart';
 import 'screens/medicines_screen.dart';
 import 'screens/appointments_screen.dart';
 import 'screens/profile_screen.dart';
-
 import 'screens/symptom_checker_screen.dart';
 import 'services/notification_service.dart';
 
@@ -41,8 +41,7 @@ class AppEntry extends ConsumerStatefulWidget {
 }
 
 class _AppEntryState extends ConsumerState<AppEntry> {
-  // 0 = splash, 1 = onboarding, 2 = main
-  int _stage = 0;
+  int _stage = 0; // 0 = splash, 1 = onboarding, 2 = main
 
   void _onSplashDone() {
     final profile = ref.read(profileProvider);
@@ -68,7 +67,7 @@ class _AppEntryState extends ConsumerState<AppEntry> {
   }
 }
 
-/// Main navigation shell with BottomNavigationBar and 4 tabs.
+/// Main navigation shell with glassmorphic BottomNavigationBar.
 class AppShell extends ConsumerWidget {
   const AppShell({super.key});
 
@@ -80,32 +79,111 @@ class AppShell extends ConsumerWidget {
     ProfileScreen(),
   ];
 
+  static const _navItems = [
+    _NavItem(Icons.home_rounded, Icons.home_outlined, 'Home'),
+    _NavItem(Icons.medication_rounded, Icons.medication_outlined, 'Medicines'),
+    _NavItem(Icons.favorite_rounded, Icons.favorite_outline, 'Diagnose'),
+    _NavItem(
+      Icons.calendar_month_rounded,
+      Icons.calendar_month_outlined,
+      'Appts',
+    ),
+    _NavItem(Icons.person_rounded, Icons.person_outline, 'Profile'),
+  ];
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentTab = ref.watch(currentTabProvider);
     return Scaffold(
+      extendBody: true,
       body: IndexedStack(index: currentTab, children: _screens),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentTab,
-        onTap: (i) => ref.read(currentTabProvider.notifier).state = i,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Command'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.medication),
-            label: 'Regimen',
+      bottomNavigationBar: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Color(0xCC181A20), // 80% bgPrimary
+              border: Border(
+                top: BorderSide(color: AppTheme.glassBorder, width: 0.5),
+              ),
+            ),
+            padding: const EdgeInsets.only(top: 8, bottom: 8),
+            child: SafeArea(
+              top: false,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: List.generate(_navItems.length, (i) {
+                  final item = _navItems[i];
+                  final selected = currentTab == i;
+                  return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap:
+                        () => ref.read(currentTabProvider.notifier).state = i,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            selected
+                                ? AppTheme.electricBlue.withValues(alpha: 0.15)
+                                : Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            selected ? item.activeIcon : item.icon,
+                            color:
+                                selected
+                                    ? AppTheme.electricBlue
+                                    : AppTheme.textSecondary,
+                            size: 24,
+                            shadows:
+                                selected
+                                    ? [
+                                      Shadow(
+                                        color: AppTheme.electricBlue.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                        blurRadius: 12,
+                                      ),
+                                    ]
+                                    : null,
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            item.label,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight:
+                                  selected ? FontWeight.w600 : FontWeight.w400,
+                              color:
+                                  selected
+                                      ? AppTheme.electricBlue
+                                      : AppTheme.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.health_and_safety),
-            label: 'Diagnose',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Care Points',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Identity'),
-        ],
+        ),
       ),
     );
   }
 }
 
+class _NavItem {
+  final IconData activeIcon;
+  final IconData icon;
+  final String label;
+  const _NavItem(this.activeIcon, this.icon, this.label);
+}
