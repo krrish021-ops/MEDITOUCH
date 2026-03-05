@@ -1,0 +1,30 @@
+name: smart_health_reminder
+description: A smart health reminder Flutter application.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_riverpod: ^2.6.1
+  google_fonts: ^6.2.1
+  intl: ^0.19.0
+  shared_preferences: ^2.3.4
+  uuid: ^4.5.1
+  percent_indicator: ^4.2.4
+  flutter_local_notifications: ^21.0.0-dev.2
+  timezone: ^0.11.0
+  lottie: ^3.2.1
+  animations: ^2.0.11
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
