@@ -1,6 +1,7 @@
 /// Medicines list screen matching design screenshot 2.
 /// Shows search, filter chips, medicine cards with dose times, and FAB to add.
 library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
@@ -27,12 +28,13 @@ class _MedicinesScreenState extends ConsumerState<MedicinesScreen> {
   }
 
   List<Medicine> _filteredMedicines(List<Medicine> all) {
-    var list = all.where((m) {
-      if (_searchQuery.isNotEmpty) {
-        return m.name.toLowerCase().contains(_searchQuery.toLowerCase());
-      }
-      return true;
-    }).toList();
+    var list =
+        all.where((m) {
+          if (_searchQuery.isNotEmpty) {
+            return m.name.toLowerCase().contains(_searchQuery.toLowerCase());
+          }
+          return true;
+        }).toList();
 
     switch (_activeFilter) {
       case 'Active':
@@ -59,10 +61,14 @@ class _MedicinesScreenState extends ConsumerState<MedicinesScreen> {
         backgroundColor: AppTheme.bgDark,
         leading: IconButton(
           icon: const Icon(Icons.menu),
-          onPressed: () =>
-              _showDummyDialog(context, 'Menu', 'Navigation menu coming soon!'),
+          onPressed:
+              () => _showDummyDialog(
+                context,
+                'Menu',
+                'Navigation menu coming soon!',
+              ),
         ),
-        title: const Text('My Medicines'),
+        title: const Text('Regimen Flow'),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
@@ -85,17 +91,18 @@ class _MedicinesScreenState extends ConsumerState<MedicinesScreen> {
               controller: _searchController,
               onChanged: (v) => setState(() => _searchQuery = v),
               decoration: InputDecoration(
-                hintText: 'Search your medications...',
+                hintText: 'Search your guards...',
                 prefixIcon: const Icon(Icons.search, color: AppTheme.grey),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.close, color: AppTheme.grey),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _searchQuery = '');
-                        },
-                      )
-                    : null,
+                suffixIcon:
+                    _searchQuery.isNotEmpty
+                        ? IconButton(
+                          icon: const Icon(Icons.close, color: AppTheme.grey),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _searchQuery = '');
+                          },
+                        )
+                        : null,
               ),
             ),
           ),
@@ -104,33 +111,36 @@ class _MedicinesScreenState extends ConsumerState<MedicinesScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
             child: Row(
-              children: ['All', 'Active', 'Completed', 'Today'].map((label) {
-                final isActive = _activeFilter == label;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(label),
-                    selected: isActive,
-                    onSelected: (_) => setState(() => _activeFilter = label),
-                    selectedColor: AppTheme.teal,
-                    backgroundColor: AppTheme.chipBg,
-                    labelStyle: TextStyle(
-                      color: isActive ? Colors.white : AppTheme.teal,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      side: BorderSide(
-                        color: isActive
-                            ? AppTheme.teal
-                            : AppTheme.teal.withValues(alpha: 0.4),
+              children:
+                  ['All', 'Active', 'Completed', 'Today'].map((label) {
+                    final isActive = _activeFilter == label;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text(label),
+                        selected: isActive,
+                        onSelected:
+                            (_) => setState(() => _activeFilter = label),
+                        selectedColor: AppTheme.teal,
+                        backgroundColor: AppTheme.chipBg,
+                        labelStyle: TextStyle(
+                          color: isActive ? Colors.white : AppTheme.teal,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          side: BorderSide(
+                            color:
+                                isActive
+                                    ? AppTheme.teal
+                                    : AppTheme.teal.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        showCheckmark: false,
                       ),
-                    ),
-                    showCheckmark: false,
-                  ),
-                );
-              }).toList(),
+                    );
+                  }).toList(),
             ),
           ),
           const SizedBox(height: 8),
@@ -141,7 +151,7 @@ class _MedicinesScreenState extends ConsumerState<MedicinesScreen> {
             child: Row(
               children: [
                 const Text(
-                  'UPCOMING DOSES',
+                  'ACTIVE GUARDS',
                   style: TextStyle(
                     color: AppTheme.teal,
                     fontSize: 13,
@@ -161,30 +171,39 @@ class _MedicinesScreenState extends ConsumerState<MedicinesScreen> {
 
           // Medicine cards list
           Expanded(
-            child: filtered.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No medicines found',
-                      style: TextStyle(color: AppTheme.grey),
+            child:
+                filtered.isEmpty
+                    ? const Center(
+                      child: Text(
+                        'No guards found in your regimen.',
+                        style: TextStyle(color: AppTheme.grey),
+                      ),
+                    )
+                    : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: filtered.length,
+                      itemBuilder:
+                          (ctx, i) =>
+                              _buildMedicineCard(context, ref, filtered[i]),
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: filtered.length,
-                    itemBuilder: (ctx, i) =>
-                        _buildMedicineCard(context, ref, filtered[i]),
-                  ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AddMedicineScreen()),
-          );
-        },
-        child: const Icon(Icons.add, size: 28),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: AppTheme.fabGlow,
+        ),
+        child: FloatingActionButton(
+          tooltip: 'Prescribe Guard',
+          onPressed: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AddMedicineScreen()),
+            );
+          },
+          child: const Icon(Icons.add, size: 28),
+        ),
       ),
     );
   }
@@ -279,20 +298,24 @@ class _MedicinesScreenState extends ConsumerState<MedicinesScreen> {
                       ref.read(medicinesProvider.notifier).delete(med.id);
                     }
                   },
-                  itemBuilder: (_) => [
-                    const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                    const PopupMenuItem(
-                      value: 'markAll',
-                      child: Text('Mark all taken'),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Text(
-                        'Delete',
-                        style: TextStyle(color: Colors.redAccent),
-                      ),
-                    ),
-                  ],
+                  itemBuilder:
+                      (_) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Text('Modify Directive'),
+                        ),
+                        const PopupMenuItem(
+                          value: 'markAll',
+                          child: Text('Secure all'),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Text(
+                            'Delete',
+                            style: TextStyle(color: Colors.redAccent),
+                          ),
+                        ),
+                      ],
                 ),
             ],
           ),
@@ -302,37 +325,41 @@ class _MedicinesScreenState extends ConsumerState<MedicinesScreen> {
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
-              children: med.reminderTimes.map((t) {
-                final isTaken = med.takenTimes.contains(t);
-                final isNext = t == nextTime;
-                return Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isNext
-                        ? AppTheme.teal
-                        : isTaken
-                        ? AppTheme.teal.withValues(alpha: 0.2)
-                        : AppTheme.chipBg,
-                    borderRadius: BorderRadius.circular(16),
-                    border: isNext
-                        ? null
-                        : Border.all(
-                            color: AppTheme.teal.withValues(alpha: 0.3),
-                          ),
-                  ),
-                  child: Text(
-                    t,
-                    style: TextStyle(
-                      color: isNext ? Colors.white : AppTheme.greyLight,
-                      fontSize: 12,
-                      fontWeight: isNext ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
-                );
-              }).toList(),
+              children:
+                  med.reminderTimes.map((t) {
+                    final isTaken = med.takenTimes.contains(t);
+                    final isNext = t == nextTime;
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            isNext
+                                ? AppTheme.teal
+                                : isTaken
+                                ? AppTheme.teal.withValues(alpha: 0.2)
+                                : AppTheme.chipBg,
+                        borderRadius: BorderRadius.circular(16),
+                        border:
+                            isNext
+                                ? null
+                                : Border.all(
+                                  color: AppTheme.teal.withValues(alpha: 0.3),
+                                ),
+                      ),
+                      child: Text(
+                        t,
+                        style: TextStyle(
+                          color: isNext ? Colors.white : AppTheme.greyLight,
+                          fontSize: 12,
+                          fontWeight:
+                              isNext ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    );
+                  }).toList(),
             ),
           ],
 
@@ -344,7 +371,7 @@ class _MedicinesScreenState extends ConsumerState<MedicinesScreen> {
                 const Icon(Icons.access_time, color: AppTheme.teal, size: 16),
                 const SizedBox(width: 4),
                 Text(
-                  'Next at $nextTime',
+                  'Next guard at $nextTime',
                   style: const TextStyle(color: AppTheme.teal, fontSize: 13),
                 ),
               ],
@@ -366,7 +393,7 @@ class _MedicinesScreenState extends ConsumerState<MedicinesScreen> {
                 border: Border.all(color: AppTheme.teal.withValues(alpha: 0.3)),
               ),
               child: const Text(
-                'Taken',
+                'Secured',
                 style: TextStyle(
                   color: AppTheme.teal,
                   fontSize: 12,
@@ -457,16 +484,17 @@ class _MedicinesScreenState extends ConsumerState<MedicinesScreen> {
   void _showDummyDialog(BuildContext context, String title, String message) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+      builder:
+          (_) => AlertDialog(
+            title: Text(title),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }

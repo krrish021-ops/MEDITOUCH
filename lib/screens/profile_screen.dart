@@ -65,7 +65,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       backgroundColor: AppTheme.bgDark,
       appBar: AppBar(
         backgroundColor: AppTheme.bgDark,
-        title: const Text('Profile'),
+        title: const Text('Identity Core'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -348,7 +348,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               child: ElevatedButton.icon(
                 onPressed: _save,
                 icon: const Icon(Icons.save, size: 20),
-                label: const Text('Save Profile'),
+                label: const Text('Save Identity'),
               ),
             ),
             const SizedBox(height: 20),
@@ -520,7 +520,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         );
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Profile saved!'),
+        content: const Text('Identity secured.'),
         backgroundColor: AppTheme.teal,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

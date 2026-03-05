@@ -1,5 +1,6 @@
 /// Add / Edit Medicine screen matching design screenshot 4.
 library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
@@ -113,26 +114,30 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          widget.editMedicine != null ? 'Edit Medicine' : 'Add New Medicine',
+          widget.editMedicine != null
+              ? 'Modify Guard Directive'
+              : 'Prescribe Guard',
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline, color: AppTheme.grey),
-            onPressed: () => showDialog(
-              context: context,
-              builder: (_) => AlertDialog(
-                title: const Text('Help'),
-                content: const Text(
-                  'Fill in name and dosage (required). Choose form, frequency, set reminder times. Toggle food preference and add notes.',
+            onPressed:
+                () => showDialog(
+                  context: context,
+                  builder:
+                      (_) => AlertDialog(
+                        title: const Text('Help'),
+                        content: const Text(
+                          'Fill in name and dosage (required). Choose form, frequency, set reminder times. Toggle food preference and add notes.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Got it'),
+                          ),
+                        ],
+                      ),
                 ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Got it'),
-                  ),
-                ],
-              ),
-            ),
           ),
         ],
       ),
@@ -143,7 +148,7 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _label('Medicine Name'), const SizedBox(height: 6),
+              _label('Guard Name'), const SizedBox(height: 6),
               TextFormField(
                 controller: _nameCtrl,
                 decoration: InputDecoration(
@@ -153,8 +158,8 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
                     color: AppTheme.grey.withValues(alpha: 0.5),
                   ),
                 ),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Required' : null,
+                validator:
+                    (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
               ),
               const SizedBox(height: 18),
               _label('Dosage'), const SizedBox(height: 6),
@@ -167,8 +172,8 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
                     color: AppTheme.grey.withValues(alpha: 0.5),
                   ),
                 ),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Required' : null,
+                validator:
+                    (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
               ),
               const SizedBox(height: 18),
               // Form & Frequency
@@ -191,14 +196,15 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
                               value: _form,
                               isExpanded: true,
                               dropdownColor: AppTheme.bgCardLight,
-                              items: _forms
-                                  .map(
-                                    (f) => DropdownMenuItem(
-                                      value: f,
-                                      child: Text(f),
-                                    ),
-                                  )
-                                  .toList(),
+                              items:
+                                  _forms
+                                      .map(
+                                        (f) => DropdownMenuItem(
+                                          value: f,
+                                          child: Text(f),
+                                        ),
+                                      )
+                                      .toList(),
                               onChanged: (v) => setState(() => _form = v!),
                             ),
                           ),
@@ -224,14 +230,15 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
                               value: _freq,
                               isExpanded: true,
                               dropdownColor: AppTheme.bgCardLight,
-                              items: _freqs
-                                  .map(
-                                    (f) => DropdownMenuItem(
-                                      value: f,
-                                      child: Text(f),
-                                    ),
-                                  )
-                                  .toList(),
+                              items:
+                                  _freqs
+                                      .map(
+                                        (f) => DropdownMenuItem(
+                                          value: f,
+                                          child: Text(f),
+                                        ),
+                                      )
+                                      .toList(),
                               onChanged: (v) => setState(() => _freq = v!),
                             ),
                           ),
@@ -392,8 +399,8 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
                   icon: const Icon(Icons.save, size: 20),
                   label: Text(
                     widget.editMedicine != null
-                        ? 'Update Medicine'
-                        : 'Save Medicine',
+                        ? 'Update Directive'
+                        : 'Secure Protocol',
                   ),
                 ),
               ),

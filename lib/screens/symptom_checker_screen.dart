@@ -51,7 +51,7 @@ class _SymptomCheckerScreenState extends State<SymptomCheckerScreen> {
     return Scaffold(
       backgroundColor: AppTheme.bgLight,
       appBar: AppBar(
-        title: const Text('Symptom Checker'),
+        title: const Text('State Diagnose'),
         backgroundColor: AppTheme.bgLight,
         elevation: 0,
       ),

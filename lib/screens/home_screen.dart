@@ -105,14 +105,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 10),
               nextMed != null && nextTime != null
                   ? _buildNextUpCard(context, ref, nextMed, nextTime)
-                  : _buildEmptyCard('All doses taken for today! 🎉'),
+                  : _buildEmptyCard(
+                    'All guards completed for today. System balanced.',
+                  ),
               const SizedBox(height: 20),
 
-              _buildSectionTitle('APPOINTMENTS'),
+              _buildSectionTitle('CARE POINTS'),
               const SizedBox(height: 10),
               nextAppt != null
                   ? _buildAppointmentCard(context, ref, nextAppt)
-                  : _buildEmptyCard('No upcoming appointments'),
+                  : _buildEmptyCard('No care points scheduled. Breathe easy.'),
               const SizedBox(height: 20),
 
               _buildSectionTitle(
@@ -151,7 +153,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Hello, ${profile.name}!',
+                'Welcome back, Guardian.',
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -206,7 +208,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const Text('🔥', style: TextStyle(fontSize: 24)),
           const SizedBox(width: 10),
           Text(
-            '$streak medicine${streak > 1 ? 's' : ''} completed today!',
+            '$streak guard${streak > 1 ? 's' : ''} secured today.',
             style: const TextStyle(
               color: AppTheme.teal,
               fontWeight: FontWeight.w600,
@@ -215,7 +217,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const Spacer(),
           const Text(
-            'Keep it up! 💪',
+            'Protocol stable.',
             style: TextStyle(color: AppTheme.grey, fontSize: 12),
           ),
         ],
@@ -239,7 +241,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Today's Progress",
+                  'Regimen Flow',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -248,7 +250,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '$taken of $total medicines taken',
+                  '$total guards active in your regimen.',
                   style: const TextStyle(color: AppTheme.grey, fontSize: 14),
                 ),
                 const SizedBox(height: 10),
@@ -695,7 +697,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     .markTimeTaken(med.id, time);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('${med.name} marked as taken!'),
+                    content: Text('${med.name} secured in regimen.'),
                     backgroundColor: AppTheme.teal,
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(
@@ -705,7 +707,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 );
               },
               icon: const Icon(Icons.check_circle, size: 20),
-              label: const Text('Mark as Taken'),
+              label: const Text('Secure Protocol'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: AppTheme.teal,
@@ -727,7 +729,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     Appointment appt,
   ) {
     return InkWell(
-      onTap: () => ref.read(currentTabProvider.notifier).state = 2,
+      onTap: () => ref.read(currentTabProvider.notifier).state = 3,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),

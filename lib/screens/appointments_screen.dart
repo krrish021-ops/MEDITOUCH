@@ -1,5 +1,6 @@
 /// Appointments screen matching design screenshot 3.
 library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -28,27 +29,29 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
   Widget build(BuildContext context) {
     final notifier = ref.read(appointmentsProvider.notifier);
     ref.watch(appointmentsProvider); // rebuild on changes
-    final upcoming = notifier.upcoming
-        .where(
-          (a) =>
-              _search.isEmpty ||
-              a.doctorName.toLowerCase().contains(_search.toLowerCase()),
-        )
-        .toList();
-    final past = notifier.past
-        .where(
-          (a) =>
-              _search.isEmpty ||
-              a.doctorName.toLowerCase().contains(_search.toLowerCase()),
-        )
-        .toList();
+    final upcoming =
+        notifier.upcoming
+            .where(
+              (a) =>
+                  _search.isEmpty ||
+                  a.doctorName.toLowerCase().contains(_search.toLowerCase()),
+            )
+            .toList();
+    final past =
+        notifier.past
+            .where(
+              (a) =>
+                  _search.isEmpty ||
+                  a.doctorName.toLowerCase().contains(_search.toLowerCase()),
+            )
+            .toList();
 
     return Scaffold(
       backgroundColor: AppTheme.bgDark,
       appBar: AppBar(
         backgroundColor: AppTheme.bgDark,
         title: const Text(
-          'Appointments',
+          'Care Points',
           style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
         ),
         actions: [
@@ -57,30 +60,31 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
             onPressed: () {
               showDialog(
                 context: context,
-                builder: (_) => AlertDialog(
-                  title: const Text('Search Appointments'),
-                  content: TextField(
-                    controller: _searchCtrl,
-                    decoration: const InputDecoration(
-                      hintText: 'Doctor name...',
+                builder:
+                    (_) => AlertDialog(
+                      title: const Text('Search Care Points'),
+                      content: TextField(
+                        controller: _searchCtrl,
+                        decoration: const InputDecoration(
+                          hintText: 'Doctor name...',
+                        ),
+                        onChanged: (v) => setState(() => _search = v),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            setState(() => _search = '');
+                            Navigator.pop(context);
+                          },
+                          child: const Text('Clear'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Done'),
+                        ),
+                      ],
                     ),
-                    onChanged: (v) => setState(() => _search = v),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        _searchCtrl.clear();
-                        setState(() => _search = '');
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Clear'),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Done'),
-                    ),
-                  ],
-                ),
               );
             },
           ),
@@ -89,16 +93,17 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
             onPressed: () {
               showDialog(
                 context: context,
-                builder: (_) => AlertDialog(
-                  title: const Text('Options'),
-                  content: const Text('More options coming soon!'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('OK'),
+                builder:
+                    (_) => AlertDialog(
+                      title: const Text('Options'),
+                      content: const Text('More options coming soon!'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('OK'),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
               );
             },
           ),
@@ -122,9 +127,10 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: _showUpcoming
-                              ? AppTheme.teal
-                              : Colors.transparent,
+                          color:
+                              _showUpcoming
+                                  ? AppTheme.teal
+                                  : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -144,18 +150,18 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: !_showUpcoming
-                              ? AppTheme.teal
-                              : Colors.transparent,
+                          color:
+                              !_showUpcoming
+                                  ? AppTheme.teal
+                                  : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           'Past',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: !_showUpcoming
-                                ? Colors.white
-                                : AppTheme.grey,
+                            color:
+                                !_showUpcoming ? Colors.white : AppTheme.grey,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -173,7 +179,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
             child: Row(
               children: [
                 Text(
-                  _showUpcoming ? 'UPCOMING APPOINTMENTS' : 'PAST HISTORY',
+                  _showUpcoming ? 'UPCOMING CARE POINTS' : 'PAST HISTORY',
                   style: const TextStyle(
                     color: AppTheme.teal,
                     fontSize: 13,
@@ -192,27 +198,28 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
           const SizedBox(height: 8),
           // List
           Expanded(
-            child: _showUpcoming
-                ? (upcoming.isEmpty
-                      ? const Center(
+            child:
+                _showUpcoming
+                    ? (upcoming.isEmpty
+                        ? const Center(
                           child: Text(
-                            'No upcoming appointments',
+                            'No care points scheduled. Breathe easy.',
                             style: TextStyle(color: AppTheme.grey),
                           ),
                         )
-                      : ListView.builder(
+                        : ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           itemCount: upcoming.length,
                           itemBuilder: (_, i) => _buildCard(upcoming[i], false),
                         ))
-                : (past.isEmpty
-                      ? const Center(
+                    : (past.isEmpty
+                        ? const Center(
                           child: Text(
-                            'No past appointments',
+                            'No past care points',
                             style: TextStyle(color: AppTheme.grey),
                           ),
                         )
-                      : ListView.builder(
+                        : ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           itemCount: past.length,
                           itemBuilder: (_, i) => _buildCard(past[i], true),
@@ -226,7 +233,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
               child: ElevatedButton.icon(
                 onPressed: () => _showAddForm(context),
                 icon: const Icon(Icons.add, size: 20),
-                label: const Text('Schedule Appointment'),
+                label: const Text('Log Care Point'),
               ),
             ),
           ),
@@ -301,14 +308,16 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: isPast
-                      ? AppTheme.grey.withValues(alpha: 0.15)
-                      : AppTheme.teal.withValues(alpha: 0.15),
+                  color:
+                      isPast
+                          ? AppTheme.grey.withValues(alpha: 0.15)
+                          : AppTheme.teal.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isPast
-                        ? AppTheme.grey.withValues(alpha: 0.3)
-                        : AppTheme.teal.withValues(alpha: 0.3),
+                    color:
+                        isPast
+                            ? AppTheme.grey.withValues(alpha: 0.3)
+                            : AppTheme.teal.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Text(
@@ -404,7 +413,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Appointment rescheduled!'),
+          content: const Text('Care point rescheduled.'),
           backgroundColor: AppTheme.teal,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -418,28 +427,29 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
   void _showDetails(Appointment appt) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text(appt.doctorName),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Specialty: ${appt.specialty}'),
-            Text(
-              'Date: ${DateFormat('MMM d, yyyy h:mm a').format(appt.dateTime)}',
+      builder:
+          (_) => AlertDialog(
+            title: Text(appt.doctorName),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Specialty: ${appt.specialty}'),
+                Text(
+                  'Date: ${DateFormat('MMM d, yyyy h:mm a').format(appt.dateTime)}',
+                ),
+                Text('Location: ${appt.location}'),
+                Text('Status: ${appt.status}'),
+                if (appt.notes != null) Text('Notes: ${appt.notes}'),
+              ],
             ),
-            Text('Location: ${appt.location}'),
-            Text('Status: ${appt.status}'),
-            if (appt.notes != null) Text('Notes: ${appt.notes}'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -470,7 +480,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Schedule Appointment',
+                      'Log Care Point',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -569,17 +579,19 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                     selectedTime.hour,
                                     selectedTime.minute,
                                   ),
-                                  location: locCtrl.text.trim().isNotEmpty
-                                      ? locCtrl.text.trim()
-                                      : 'TBD',
-                                  notes: notesCtrl.text.trim().isNotEmpty
-                                      ? notesCtrl.text.trim()
-                                      : null,
+                                  location:
+                                      locCtrl.text.trim().isNotEmpty
+                                          ? locCtrl.text.trim()
+                                          : 'TBD',
+                                  notes:
+                                      notesCtrl.text.trim().isNotEmpty
+                                          ? notesCtrl.text.trim()
+                                          : null,
                                 ),
                               );
                           Navigator.pop(context);
                         },
-                        child: const Text('Save Appointment'),
+                        child: const Text('Secure Protocol'),
                       ),
                     ),
                   ],

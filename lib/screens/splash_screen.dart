@@ -99,7 +99,7 @@ class _SplashScreenState extends State<SplashScreen>
               const SizedBox(height: 28),
               // App name
               const Text(
-                'Smart Health',
+                'MEDITOUCH',
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -108,7 +108,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
               const Text(
-                'REMINDER',
+                'WELLNESS PROTOCOL',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -118,7 +118,7 @@ class _SplashScreenState extends State<SplashScreen>
               ),
               const SizedBox(height: 12),
               const Text(
-                'Your personal health companion',
+                'Initializing Wellness Protocol...',
                 style: TextStyle(color: AppTheme.grey, fontSize: 14),
               ),
               const Spacer(flex: 2),

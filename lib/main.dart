@@ -1,4 +1,4 @@
-// Smart Health Reminder app entry point.
+﻿// Smart Health Reminder app entry point.
 // Splash → Onboarding (if first time) → Main app with bottom navigation.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,7 +25,7 @@ class SmartHealthApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Smart Health Reminder',
+      title: 'MEDITOUCH',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: const AppEntry(),
@@ -89,22 +89,23 @@ class AppShell extends ConsumerWidget {
         currentIndex: currentTab,
         onTap: (i) => ref.read(currentTabProvider.notifier).state = i,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Command'),
           BottomNavigationBarItem(
             icon: Icon(Icons.medication),
-            label: 'Medicines',
+            label: 'Regimen',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.health_and_safety),
-            label: 'Symptoms',
+            label: 'Diagnose',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today),
-            label: 'Visits',
+            label: 'Care Points',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Identity'),
         ],
       ),
     );
   }
 }
+
