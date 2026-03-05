@@ -209,52 +209,89 @@ class AppTheme {
 
   // Glassmorphic glow effect (for cards and surfaces)
   static List<BoxShadow> get glassShadow => [
-        BoxShadow(
-          color: primaryBlue.withOpacity(0.15),
-          offset: const Offset(0, 0),
-          blurRadius: 20,
-          spreadRadius: 0,
-        ),
-      ];
+    BoxShadow(
+      color: primaryBlue.withOpacity(0.15),
+      offset: const Offset(0, 0),
+      blurRadius: 20,
+      spreadRadius: 0,
+    ),
+  ];
 
   // Floating FAB glow (pulsing effect)
   static List<BoxShadow> get fabGlow => [
-        BoxShadow(
-          color: primaryBlue.withOpacity(0.5),
-          offset: const Offset(0, 0),
-          blurRadius: 20,
-          spreadRadius: 2,
-        ),
-      ];
+    BoxShadow(
+      color: primaryBlue.withOpacity(0.5),
+      offset: const Offset(0, 0),
+      blurRadius: 20,
+      spreadRadius: 2,
+    ),
+  ];
 
   // Gradient background for scaffold (deep space effect)
   static BoxDecoration get nebulaBackground => BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [bgDark1, bgDark2, bgDark3],
-          stops: const [0.0, 0.5, 1.0],
-        ),
-      );
+    gradient: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [bgDark1, bgDark2, bgDark3],
+      stops: const [0.0, 0.5, 1.0],
+    ),
+  );
 
   // Glassmorphic card decoration
   static BoxDecoration glassMorphicCard({
     double borderRadius = 20,
     double opacity = 0.6,
-  }) =>
-      BoxDecoration(
-        color: Color.fromRGBO(15, 12, 41, opacity),
-        borderRadius: BorderRadius.circular(borderRadius),
-        border: Border.all(
-          color: primaryBlue.withOpacity(0.2),
-          width: 1,
-        ),
-        boxShadow: glassShadow,
-      );
+  }) => BoxDecoration(
+    color: Color.fromRGBO(15, 12, 41, opacity),
+    borderRadius: BorderRadius.circular(borderRadius),
+    border: Border.all(color: primaryBlue.withOpacity(0.2), width: 1),
+    boxShadow: glassShadow,
+  );
 
   // Text glow effect for active labels
-  static Shadow get textGlow => Shadow(
-        color: primaryBlue.withOpacity(0.13),
-        blurRadius: 5,
-      );
+  static Shadow get textGlow =>
+      Shadow(color: primaryBlue.withOpacity(0.13), blurRadius: 5);
+}
+
+class GlassCard extends StatelessWidget {
+  final Widget child;
+
+  const GlassCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.all(12),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF0F0C29), Color(0xFF302B63)],
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Color.fromARGB(80, 15, 12, 41),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Color(0x4000D1FF), width: 0.8),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x2000D1FF),
+                  blurRadius: 8,
+                  spreadRadius: 1,
+                  offset: Offset(0, 0),
+                ),
+              ],
+            ),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
 }
