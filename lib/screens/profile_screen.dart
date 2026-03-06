@@ -9,6 +9,7 @@ import '../providers/providers.dart';
 import '../models/models.dart';
 import '../widgets/nebula_background.dart';
 import '../widgets/glass_card.dart';
+import '../services/auth_service.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -476,6 +477,73 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     label: const Text('Save Profile'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Logout button
+              SizedBox(
+                width: double.infinity,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppTheme.radiantPink.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder:
+                            (ctx) => AlertDialog(
+                              backgroundColor: AppTheme.bgSecondary,
+                              title: const Text(
+                                'Sign Out',
+                                style: TextStyle(color: AppTheme.textPrimary),
+                              ),
+                              content: const Text(
+                                'Are you sure you want to sign out?',
+                                style: TextStyle(color: AppTheme.textSecondary),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  child: const Text(
+                                    'Sign Out',
+                                    style: TextStyle(
+                                      color: AppTheme.radiantPink,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                      );
+                      if (confirmed == true) {
+                        await AuthService().signOut();
+                      }
+                    },
+                    icon: const Icon(
+                      Icons.logout_rounded,
+                      size: 20,
+                      color: AppTheme.radiantPink,
+                    ),
+                    label: const Text(
+                      'Sign Out',
+                      style: TextStyle(color: AppTheme.radiantPink),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.radiantPink.withValues(
+                        alpha: 0.1,
+                      ),
                       shadowColor: Colors.transparent,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),

@@ -122,7 +122,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     }
   }
 
-  void _finish() {
+  Future<void> _finish() async {
     final profile = UserProfile(
       name: _nameCtrl.text.trim(),
       age: int.tryParse(_ageCtrl.text.trim()),
@@ -144,7 +144,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
       allergies: _selectedAllergies.toList(),
       onboardingComplete: true,
     );
-    ref.read(profileProvider.notifier).updateProfile(profile);
+    await ref.read(profileProvider.notifier).updateProfile(profile);
     widget.onComplete();
   }
 

@@ -1,39 +1,20 @@
-/// In-memory repository for appointments.
+/// Firestore-backed repository for appointments.
 library;
 
 import '../models/models.dart';
+import '../services/firestore_service.dart';
 
 class AppointmentsRepository {
-  final List<Appointment> _appointments = [
-    Appointment(
-      doctorName: 'Dr. Aris',
-      specialty: 'Dentist Specialist',
-      dateTime: DateTime.now().add(const Duration(days: 3, hours: 5)),
-      location: 'City Dental Clinic',
-      status: 'CONFIRMED',
-    ),
-    Appointment(
-      doctorName: 'Dr. Sarah',
-      specialty: 'General Physician',
-      dateTime: DateTime.now().add(const Duration(days: 14, hours: 2)),
-      location: 'Health Center North',
-      status: 'IN 2 WEEKS',
-    ),
-    Appointment(
-      doctorName: 'Dr. Smith',
-      specialty: 'Cardiologist',
-      dateTime: DateTime.now().add(const Duration(days: 1, hours: 3)),
-      location: 'Heart Care Hospital',
-      status: 'CONFIRMED',
-    ),
-    Appointment(
-      doctorName: 'Dr. Miller',
-      specialty: 'Optometry',
-      dateTime: DateTime.now().subtract(const Duration(days: 30)),
-      location: 'Vision Care Center',
-      status: 'COMPLETED',
-    ),
-  ];
+  final FirestoreService _firestore = FirestoreService();
+
+  List<Appointment> _appointments = [];
+
+  /// Load all appointments from Firestore into memory.
+  Future<void> loadAll() async {
+    final snapshot = await _firestore.appointmentsCollection.get();
+    _appointments =
+        snapshot.docs.map((doc) => Appointment.fromMap(doc.data())).toList();
+  }
 
   List<Appointment> getAll() => List.unmodifiable(_appointments);
 
@@ -58,12 +39,23 @@ class AppointmentsRepository {
     }
   }
 
-  void add(Appointment appointment) => _appointments.add(appointment);
+  Future<void> add(Appointment appointment) async {
+    await _firestore.appointmentsCollection
+        .doc(appointment.id)
+        .set(appointment.toMap());
+    _appointments.add(appointment);
+  }
 
-  void update(Appointment appointment) {
+  Future<void> update(Appointment appointment) async {
+    await _firestore.appointmentsCollection
+        .doc(appointment.id)
+        .update(appointment.toMap());
     final index = _appointments.indexWhere((a) => a.id == appointment.id);
     if (index != -1) _appointments[index] = appointment;
   }
 
-  void delete(String id) => _appointments.removeWhere((a) => a.id == id);
+  Future<void> delete(String id) async {
+    await _firestore.appointmentsCollection.doc(id).delete();
+    _appointments.removeWhere((a) => a.id == id);
+  }
 }

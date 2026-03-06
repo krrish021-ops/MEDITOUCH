@@ -1,5 +1,6 @@
 // Riverpod providers for all repositories and state.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/models.dart';
 import '../repositories/medicines_repository.dart';
 import '../repositories/appointments_repository.dart';
@@ -7,6 +8,11 @@ import '../repositories/profile_repository.dart';
 import '../repositories/checkin_repository.dart';
 
 import '../services/notification_service.dart';
+
+// --- Auth ---
+final authStateProvider = StreamProvider<User?>((ref) {
+  return FirebaseAuth.instance.authStateChanges();
+});
 
 // --- Repositories (singletons) ---
 final medicinesRepoProvider = Provider<MedicinesRepository>(
@@ -36,26 +42,30 @@ class MedicinesNotifier extends StateNotifier<List<Medicine>> {
 
   void refresh() => state = _repo.getAll();
 
-  void add(Medicine m) {
-    _repo.add(m);
+  Future<void> loadFromFirestore() async {
+    await _repo.loadAll();
+    refresh();
+  }
+
+  Future<void> add(Medicine m) async {
+    await _repo.add(m);
     _scheduleNotifications(m);
     refresh();
   }
 
-  void update(Medicine m) {
-    _repo.update(m);
-    _notificationService.cancelMedicineNotifications(m).then((_) {
-      _scheduleNotifications(m);
-    });
+  Future<void> update(Medicine m) async {
+    await _repo.update(m);
+    await _notificationService.cancelMedicineNotifications(m);
+    _scheduleNotifications(m);
     refresh();
   }
 
-  void delete(String id) {
+  Future<void> delete(String id) async {
     final medicine = _repo.getById(id);
     if (medicine != null) {
-      _notificationService.cancelMedicineNotifications(medicine);
+      await _notificationService.cancelMedicineNotifications(medicine);
     }
-    _repo.delete(id);
+    await _repo.delete(id);
     refresh();
   }
 
@@ -70,13 +80,13 @@ class MedicinesNotifier extends StateNotifier<List<Medicine>> {
     }
   }
 
-  void markTimeTaken(String id, String time) {
-    _repo.markTimeTaken(id, time);
+  Future<void> markTimeTaken(String id, String time) async {
+    await _repo.markTimeTaken(id, time);
     refresh();
   }
 
-  void markAllTaken(String id) {
-    _repo.markAllTaken(id);
+  Future<void> markAllTaken(String id) async {
+    await _repo.markAllTaken(id);
     refresh();
   }
 
@@ -96,34 +106,38 @@ final medicinesProvider =
 class AppointmentsNotifier extends StateNotifier<List<Appointment>> {
   final AppointmentsRepository _repo;
   final NotificationService _notificationService = NotificationService();
-  AppointmentsNotifier(this._repo) : super(_repo.getAll()) {
+  AppointmentsNotifier(this._repo) : super(_repo.getAll());
+
+  void refresh() => state = _repo.getAll();
+
+  Future<void> loadFromFirestore() async {
+    await _repo.loadAll();
+    refresh();
     // Schedule notifications for all existing upcoming appointments
     for (final a in _repo.getUpcoming()) {
       _notificationService.scheduleAppointmentNotification(appointment: a);
     }
   }
 
-  void refresh() => state = _repo.getAll();
-  void add(Appointment a) {
-    _repo.add(a);
+  Future<void> add(Appointment a) async {
+    await _repo.add(a);
     _notificationService.scheduleAppointmentNotification(appointment: a);
     refresh();
   }
 
-  void update(Appointment a) {
-    _notificationService.cancelAppointmentNotification(a).then((_) {
-      _notificationService.scheduleAppointmentNotification(appointment: a);
-    });
-    _repo.update(a);
+  Future<void> update(Appointment a) async {
+    await _notificationService.cancelAppointmentNotification(a);
+    _notificationService.scheduleAppointmentNotification(appointment: a);
+    await _repo.update(a);
     refresh();
   }
 
-  void delete(String id) {
+  Future<void> delete(String id) async {
     final appt = _repo.getById(id);
     if (appt != null) {
-      _notificationService.cancelAppointmentNotification(appt);
+      await _notificationService.cancelAppointmentNotification(appt);
     }
-    _repo.delete(id);
+    await _repo.delete(id);
     refresh();
   }
 
@@ -142,8 +156,13 @@ class ProfileNotifier extends StateNotifier<UserProfile> {
   final ProfileRepository _repo;
   ProfileNotifier(this._repo) : super(_repo.get());
 
-  void updateProfile(UserProfile p) {
-    _repo.update(p);
+  Future<void> loadFromFirestore() async {
+    await _repo.load();
+    state = _repo.get();
+  }
+
+  Future<void> updateProfile(UserProfile p) async {
+    await _repo.update(p);
     state = _repo.get();
   }
 
@@ -161,8 +180,13 @@ class CheckInNotifier extends StateNotifier<DailyCheckIn?> {
   final CheckInRepository _repo;
   CheckInNotifier(this._repo) : super(_repo.getToday());
 
-  void saveMood(int mood, {String? note}) {
-    _repo.saveMood(mood, note: note);
+  Future<void> loadFromFirestore() async {
+    await _repo.loadAll();
+    state = _repo.getToday();
+  }
+
+  Future<void> saveMood(int mood, {String? note}) async {
+    await _repo.saveMood(mood, note: note);
     state = _repo.getToday();
   }
 }

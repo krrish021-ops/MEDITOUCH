@@ -72,6 +72,44 @@ class UserProfile {
     );
   }
 
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'age': age,
+      'gender': gender,
+      'phone': phone,
+      'email': email,
+      'bloodGroup': bloodGroup,
+      'emergencyContactName': emergencyContactName,
+      'emergencyContactPhone': emergencyContactPhone,
+      'healthConditions': healthConditions,
+      'allergies': allergies,
+      'height': height,
+      'weight': weight,
+      'onboardingComplete': onboardingComplete,
+    };
+  }
+
+  factory UserProfile.fromMap(Map<String, dynamic> map) {
+    return UserProfile(
+      id: map['id'] as String,
+      name: map['name'] as String,
+      age: map['age'] as int?,
+      gender: map['gender'] as String?,
+      phone: map['phone'] as String?,
+      email: map['email'] as String?,
+      bloodGroup: map['bloodGroup'] as String?,
+      emergencyContactName: map['emergencyContactName'] as String?,
+      emergencyContactPhone: map['emergencyContactPhone'] as String?,
+      healthConditions: List<String>.from(map['healthConditions'] ?? []),
+      allergies: List<String>.from(map['allergies'] ?? []),
+      height: (map['height'] as num?)?.toDouble(),
+      weight: (map['weight'] as num?)?.toDouble(),
+      onboardingComplete: map['onboardingComplete'] as bool? ?? false,
+    );
+  }
+
   /// BMI calculation
   double? get bmi {
     if (height != null && weight != null && height! > 0) {
@@ -148,6 +186,38 @@ class Medicine {
 
   int get takenCount => takenTimes.length;
   int get totalDoses => reminderTimes.length;
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'dosage': dosage,
+      'form': form,
+      'reminderTimes': reminderTimes,
+      'frequency': frequency,
+      'withFood': withFood,
+      'notes': notes,
+      'isCompleted': isCompleted,
+      'isReminderOn': isReminderOn,
+      'takenTimes': takenTimes,
+    };
+  }
+
+  factory Medicine.fromMap(Map<String, dynamic> map) {
+    return Medicine(
+      id: map['id'] as String,
+      name: map['name'] as String,
+      dosage: map['dosage'] as String,
+      form: map['form'] as String? ?? 'Tablet',
+      reminderTimes: List<String>.from(map['reminderTimes'] ?? []),
+      frequency: map['frequency'] as String? ?? 'Once a day',
+      withFood: map['withFood'] as bool? ?? false,
+      notes: map['notes'] as String?,
+      isCompleted: map['isCompleted'] as bool? ?? false,
+      isReminderOn: map['isReminderOn'] as bool? ?? true,
+      takenTimes: List<String>.from(map['takenTimes'] ?? []),
+    );
+  }
 }
 
 /// Represents a medical appointment.
@@ -191,6 +261,30 @@ class Appointment {
 
   bool get isUpcoming => dateTime.isAfter(DateTime.now());
   bool get isPast => !isUpcoming;
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'doctorName': doctorName,
+      'specialty': specialty,
+      'dateTime': dateTime.toIso8601String(),
+      'location': location,
+      'status': status,
+      'notes': notes,
+    };
+  }
+
+  factory Appointment.fromMap(Map<String, dynamic> map) {
+    return Appointment(
+      id: map['id'] as String,
+      doctorName: map['doctorName'] as String,
+      specialty: map['specialty'] as String,
+      dateTime: DateTime.parse(map['dateTime'] as String),
+      location: map['location'] as String,
+      status: map['status'] as String? ?? 'CONFIRMED',
+      notes: map['notes'] as String?,
+    );
+  }
 }
 
 /// Represents a daily mood check-in.
@@ -202,6 +296,24 @@ class DailyCheckIn {
 
   DailyCheckIn({String? id, required this.date, required this.mood, this.note})
     : id = id ?? _uuid.v4();
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'date': date.toIso8601String(),
+      'mood': mood,
+      'note': note,
+    };
+  }
+
+  factory DailyCheckIn.fromMap(Map<String, dynamic> map) {
+    return DailyCheckIn(
+      id: map['id'] as String,
+      date: DateTime.parse(map['date'] as String),
+      mood: map['mood'] as int,
+      note: map['note'] as String?,
+    );
+  }
 }
 
 /// Tracks water intake for the day.

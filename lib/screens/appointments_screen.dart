@@ -693,12 +693,12 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                           gradient: AppTheme.accentGradient,
                         ),
                         child: ElevatedButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (docCtrl.text.trim().isEmpty ||
                                 specCtrl.text.trim().isEmpty) {
                               return;
                             }
-                            ref
+                            await ref
                                 .read(appointmentsProvider.notifier)
                                 .add(
                                   Appointment(
@@ -721,7 +721,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                             : null,
                                   ),
                                 );
-                            Navigator.pop(context);
+                            if (context.mounted) Navigator.pop(context);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,

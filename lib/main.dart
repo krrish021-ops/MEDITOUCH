@@ -1,10 +1,13 @@
 ﻿// Smart Health Reminder app entry point.
-// Splash → Onboarding (if first time) → Main app with bottom navigation.
+// Splash → Auth Gate → Onboarding (if first time) → Main app with bottom nav.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'theme/app_theme.dart';
 import 'providers/providers.dart';
 import 'screens/splash_screen.dart';
+import 'screens/auth_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/medicines_screen.dart';
@@ -15,6 +18,7 @@ import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await NotificationService().init();
   runApp(const ProviderScope(child: SmartHealthApp()));
 }
@@ -32,7 +36,7 @@ class SmartHealthApp extends StatelessWidget {
   }
 }
 
-/// Controls the app flow: splash → onboarding → main.
+/// Controls the app flow: splash → auth check → onboarding → main.
 class AppEntry extends ConsumerStatefulWidget {
   const AppEntry({super.key});
   @override
@@ -40,13 +44,79 @@ class AppEntry extends ConsumerStatefulWidget {
 }
 
 class _AppEntryState extends ConsumerState<AppEntry> {
-  int _stage = 0; // 0 = splash, 1 = onboarding, 2 = main
+  int _stage = 0; // 0 = splash, 1+ = auth gate
 
   void _onSplashDone() {
+    if (mounted) setState(() => _stage = 1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_stage == 0) {
+      return SplashScreen(onFinished: _onSplashDone);
+    }
+    // After splash, show auth gate
+    return const _AuthGate();
+  }
+}
+
+/// Listens to Firebase auth state — shows login or the main app.
+class _AuthGate extends ConsumerWidget {
+  const _AuthGate();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authStateProvider);
+
+    return authState.when(
+      data: (user) {
+        if (user == null) return const AuthScreen();
+        return _AppLoader(key: ValueKey(user.uid));
+      },
+      loading:
+          () => const Scaffold(
+            backgroundColor: AppTheme.bgPrimary,
+            body: Center(
+              child: CircularProgressIndicator(color: AppTheme.electricBlue),
+            ),
+          ),
+      error: (_, __) => const AuthScreen(),
+    );
+  }
+}
+
+/// Loads Firestore data then shows onboarding or main app.
+class _AppLoader extends ConsumerStatefulWidget {
+  const _AppLoader({super.key});
+  @override
+  ConsumerState<_AppLoader> createState() => _AppLoaderState();
+}
+
+class _AppLoaderState extends ConsumerState<_AppLoader> {
+  bool _loaded = false;
+  int _stage = 0; // 0 = loading, 1 = onboarding, 2 = main
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    await ref.read(profileProvider.notifier).loadFromFirestore();
+    await Future.wait([
+      ref.read(medicinesProvider.notifier).loadFromFirestore(),
+      ref.read(appointmentsProvider.notifier).loadFromFirestore(),
+      ref.read(checkInProvider.notifier).loadFromFirestore(),
+    ]);
+
     final profile = ref.read(profileProvider);
-    setState(() {
-      _stage = profile.onboardingComplete ? 2 : 1;
-    });
+    if (mounted) {
+      setState(() {
+        _loaded = true;
+        _stage = profile.onboardingComplete ? 2 : 1;
+      });
+    }
   }
 
   void _onOnboardingDone() {
@@ -55,14 +125,18 @@ class _AppEntryState extends ConsumerState<AppEntry> {
 
   @override
   Widget build(BuildContext context) {
-    switch (_stage) {
-      case 0:
-        return SplashScreen(onFinished: _onSplashDone);
-      case 1:
-        return OnboardingScreen(onComplete: _onOnboardingDone);
-      default:
-        return const AppShell();
+    if (!_loaded) {
+      return const Scaffold(
+        backgroundColor: AppTheme.bgPrimary,
+        body: Center(
+          child: CircularProgressIndicator(color: AppTheme.electricBlue),
+        ),
+      );
     }
+    if (_stage == 1) {
+      return OnboardingScreen(onComplete: _onOnboardingDone);
+    }
+    return const AppShell();
   }
 }
 

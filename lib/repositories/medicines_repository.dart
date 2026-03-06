@@ -1,74 +1,41 @@
-/// In-memory repository for medicines.
+/// Firestore-backed repository for medicines.
 library;
+
 import '../models/models.dart';
+import '../services/firestore_service.dart';
 
 class MedicinesRepository {
-  final List<Medicine> _medicines = [
-    // Sample data
-    Medicine(
-      name: 'Amoxicillin',
-      dosage: '500mg',
-      form: 'Capsule',
-      reminderTimes: ['8:00 AM', '2:00 PM', '8:00 PM'],
-      frequency: 'Three times a day',
-      withFood: true,
-      isReminderOn: true,
-      takenTimes: [],
-    ),
-    Medicine(
-      name: 'Vitamin D3',
-      dosage: '1000 IU',
-      form: 'Tablet',
-      reminderTimes: ['9:00 AM'],
-      frequency: 'Once a day',
-      withFood: false,
-      isReminderOn: true,
-      isCompleted: true,
-      takenTimes: ['9:00 AM'],
-    ),
-    Medicine(
-      name: 'Cough Syrup',
-      dosage: '10ml',
-      form: 'Syrup',
-      reminderTimes: ['6:00 AM', '12:00 PM', '6:00 PM', '12:00 AM'],
-      frequency: 'Every 6 hours',
-      withFood: false,
-      isReminderOn: true,
-      takenTimes: [],
-    ),
-    Medicine(
-      name: 'Metformin',
-      dosage: '500mg',
-      form: 'Tablet',
-      reminderTimes: ['8:00 AM', '8:00 PM'],
-      frequency: 'Twice a day',
-      withFood: true,
-      notes: 'After Breakfast',
-      isReminderOn: true,
-      takenTimes: [],
-    ),
-    Medicine(
-      name: 'Lisinopril',
-      dosage: '10mg',
-      form: 'Tablet',
-      reminderTimes: ['9:00 AM'],
-      frequency: 'Once a day',
-      withFood: false,
-      isReminderOn: true,
-      takenTimes: ['9:00 AM'],
-    ),
-  ];
+  final FirestoreService _firestore = FirestoreService();
+
+  /// In-memory cache synced from Firestore.
+  List<Medicine> _medicines = [];
+
+  /// Load all medicines from Firestore into memory.
+  Future<void> loadAll() async {
+    final snapshot = await _firestore.medicinesCollection.get();
+    _medicines =
+        snapshot.docs.map((doc) => Medicine.fromMap(doc.data())).toList();
+  }
 
   List<Medicine> getAll() => List.unmodifiable(_medicines);
 
-  void add(Medicine medicine) => _medicines.add(medicine);
+  Future<void> add(Medicine medicine) async {
+    await _firestore.medicinesCollection.doc(medicine.id).set(medicine.toMap());
+    _medicines.add(medicine);
+  }
 
-  void update(Medicine medicine) {
+  Future<void> update(Medicine medicine) async {
+    await _firestore.medicinesCollection
+        .doc(medicine.id)
+        .update(medicine.toMap());
     final index = _medicines.indexWhere((m) => m.id == medicine.id);
     if (index != -1) _medicines[index] = medicine;
   }
 
-  void delete(String id) => _medicines.removeWhere((m) => m.id == id);
+  Future<void> delete(String id) async {
+    await _firestore.medicinesCollection.doc(id).delete();
+    _medicines.removeWhere((m) => m.id == id);
+  }
 
   Medicine? getById(String id) {
     try {
@@ -79,22 +46,24 @@ class MedicinesRepository {
   }
 
   /// Mark a specific dose time as taken for a medicine.
-  void markTimeTaken(String medicineId, String time) {
+  Future<void> markTimeTaken(String medicineId, String time) async {
     final med = getById(medicineId);
     if (med != null && !med.takenTimes.contains(time)) {
       med.takenTimes = [...med.takenTimes, time];
       if (med.takenTimes.length >= med.reminderTimes.length) {
         med.isCompleted = true;
       }
+      await _firestore.medicinesCollection.doc(medicineId).update(med.toMap());
     }
   }
 
   /// Mark all doses as taken.
-  void markAllTaken(String medicineId) {
+  Future<void> markAllTaken(String medicineId) async {
     final med = getById(medicineId);
     if (med != null) {
       med.takenTimes = List.from(med.reminderTimes);
       med.isCompleted = true;
+      await _firestore.medicinesCollection.doc(medicineId).update(med.toMap());
     }
   }
 }

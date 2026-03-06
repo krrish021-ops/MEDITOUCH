@@ -74,7 +74,7 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
     }
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final med = Medicine(
       id: widget.editMedicine?.id,
@@ -90,11 +90,11 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
       isCompleted: widget.editMedicine?.isCompleted ?? false,
     );
     if (widget.editMedicine != null) {
-      ref.read(medicinesProvider.notifier).update(med);
+      await ref.read(medicinesProvider.notifier).update(med);
     } else {
-      ref.read(medicinesProvider.notifier).add(med);
+      await ref.read(medicinesProvider.notifier).add(med);
     }
-    Navigator.pop(context);
+    if (mounted) Navigator.pop(context);
   }
 
   Widget _sectionLabel(String t, {Color color = AppTheme.electricBlue}) {
