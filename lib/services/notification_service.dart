@@ -4,6 +4,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'dart:io';
 
 import '../models/models.dart';
+import 'dart:async';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -151,5 +152,51 @@ class NotificationService {
       final int notificationId = (medicine.id + timeString).hashCode;
       await flutterLocalNotificationsPlugin.cancel(id: notificationId);
     }
+  }
+
+  /// Schedule a notification for an appointment (fires 30 minutes before).
+  Future<void> scheduleAppointmentNotification({
+    required Appointment appointment,
+  }) async {
+    final notifyTime = appointment.dateTime.subtract(
+      const Duration(minutes: 30),
+    );
+    if (notifyTime.isBefore(DateTime.now())) return; // Already past
+
+    final int notificationId = ('appt_${appointment.id}').hashCode;
+    final tz.TZDateTime tzScheduleTime = tz.TZDateTime.from(
+      notifyTime,
+      tz.local,
+    );
+
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+          'appointment_reminder_channel',
+          'Appointment Reminders',
+          channelDescription: 'Notifications for upcoming appointments',
+          importance: Importance.max,
+          priority: Priority.high,
+          ticker: 'ticker',
+        );
+    const NotificationDetails details = NotificationDetails(
+      android: androidDetails,
+      iOS: DarwinNotificationDetails(),
+    );
+
+    await flutterLocalNotificationsPlugin.zonedSchedule(
+      id: notificationId,
+      title: 'Appointment in 30 minutes!',
+      body:
+          '${appointment.doctorName} — ${appointment.specialty} at ${appointment.location}',
+      scheduledDate: tzScheduleTime,
+      notificationDetails: details,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+    );
+  }
+
+  /// Cancel notification for an appointment.
+  Future<void> cancelAppointmentNotification(Appointment appointment) async {
+    final int notificationId = ('appt_${appointment.id}').hashCode;
+    await flutterLocalNotificationsPlugin.cancel(id: notificationId);
   }
 }

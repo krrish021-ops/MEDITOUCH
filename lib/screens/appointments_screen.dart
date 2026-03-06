@@ -222,32 +222,32 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                   (_, i) => _buildCard(past[i], true, i),
                             )),
               ),
-
-              // Add button
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      gradient: AppTheme.accentGradient,
-                      boxShadow: AppTheme.glow(AppTheme.electricBlue, blur: 14),
-                    ),
-                    child: ElevatedButton.icon(
-                      onPressed: () => _showAddForm(context),
-                      icon: const Icon(Icons.add_rounded, size: 20),
-                      label: const Text('Add Appointment'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
             ],
+          ),
+        ),
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.only(bottom: 30),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              gradient: AppTheme.accentGradient,
+              boxShadow: AppTheme.glow(
+                AppTheme.electricBlue,
+                blur: 20,
+                spread: 2,
+              ),
+            ),
+            child: FloatingActionButton(
+              tooltip: 'Add Appointment',
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              onPressed: () => _showAddForm(context),
+              child: const Icon(
+                Icons.add_rounded,
+                size: 28,
+                color: Colors.white,
+              ),
+            ),
           ),
         ),
       ),

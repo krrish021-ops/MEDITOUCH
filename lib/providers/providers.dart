@@ -95,20 +95,34 @@ final medicinesProvider =
 // --- Appointments ---
 class AppointmentsNotifier extends StateNotifier<List<Appointment>> {
   final AppointmentsRepository _repo;
-  AppointmentsNotifier(this._repo) : super(_repo.getAll());
+  final NotificationService _notificationService = NotificationService();
+  AppointmentsNotifier(this._repo) : super(_repo.getAll()) {
+    // Schedule notifications for all existing upcoming appointments
+    for (final a in _repo.getUpcoming()) {
+      _notificationService.scheduleAppointmentNotification(appointment: a);
+    }
+  }
 
   void refresh() => state = _repo.getAll();
   void add(Appointment a) {
     _repo.add(a);
+    _notificationService.scheduleAppointmentNotification(appointment: a);
     refresh();
   }
 
   void update(Appointment a) {
+    _notificationService.cancelAppointmentNotification(a).then((_) {
+      _notificationService.scheduleAppointmentNotification(appointment: a);
+    });
     _repo.update(a);
     refresh();
   }
 
   void delete(String id) {
+    final appt = _repo.getById(id);
+    if (appt != null) {
+      _notificationService.cancelAppointmentNotification(appt);
+    }
     _repo.delete(id);
     refresh();
   }

@@ -225,27 +225,34 @@ class _MedicinesScreenState extends ConsumerState<MedicinesScreen> {
             ),
           ],
         ),
-        floatingActionButton: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            gradient: AppTheme.accentGradient,
-            boxShadow: AppTheme.glow(
-              AppTheme.electricBlue,
-              blur: 20,
-              spread: 2,
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.only(bottom: 30),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              gradient: AppTheme.accentGradient,
+              boxShadow: AppTheme.glow(
+                AppTheme.electricBlue,
+                blur: 20,
+                spread: 2,
+              ),
             ),
-          ),
-          child: FloatingActionButton(
-            tooltip: 'Add Medicine',
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AddMedicineScreen()),
-              );
-            },
-            child: const Icon(Icons.add_rounded, size: 28, color: Colors.white),
+            child: FloatingActionButton(
+              tooltip: 'Add Medicine',
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AddMedicineScreen()),
+                );
+              },
+              child: const Icon(
+                Icons.add_rounded,
+                size: 28,
+                color: Colors.white,
+              ),
+            ),
           ),
         ),
       ),
