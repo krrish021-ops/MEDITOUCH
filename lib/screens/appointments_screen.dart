@@ -2,7 +2,6 @@
 /// accent-colored specialty icons, nebula background.
 library;
 
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -129,23 +128,17 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                   horizontal: 20,
                   vertical: 8,
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppTheme.glassWhite,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppTheme.glassBorder),
-                      ),
-                      child: Row(
-                        children: [
-                          _segmentButton('Upcoming', true),
-                          _segmentButton('Past', false),
-                        ],
-                      ),
-                    ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0x28FFFFFF),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppTheme.glassBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      _segmentButton('Upcoming', true),
+                      _segmentButton('Past', false),
+                    ],
                   ),
                 ),
               ),
@@ -226,7 +219,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
           ),
         ),
         floatingActionButton: Padding(
-          padding: const EdgeInsets.only(bottom: 30),
+          padding: const EdgeInsets.only(bottom: 80),
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(28),
@@ -309,212 +302,199 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppTheme.glassWhite,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: accent.withValues(alpha: isPast ? 0.1 : 0.25),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0x28FFFFFF),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: accent.withValues(alpha: isPast ? 0.1 : 0.25),
+          ),
+        ),
+        child: Row(
+          children: [
+            // Accent bar
+            Container(
+              width: 4,
+              height: isPast ? 100 : 155,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [accent, accent.withValues(alpha: 0.3)],
+                ),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(18),
+                  bottomLeft: Radius.circular(18),
+                ),
+                boxShadow: AppTheme.glow(accent, blur: 8),
               ),
             ),
-            child: Row(
-              children: [
-                // Accent bar
-                Container(
-                  width: 4,
-                  height: isPast ? 100 : 155,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [accent, accent.withValues(alpha: 0.3)],
-                    ),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(18),
-                      bottomLeft: Radius.circular(18),
-                    ),
-                    boxShadow: AppTheme.glow(accent, blur: 8),
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: accent.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(icon, color: accent, size: 22),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    appt.doctorName,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color:
-                                          isPast
-                                              ? AppTheme.textSecondary
-                                              : Colors.white,
-                                    ),
-                                  ),
-                                  Text(
-                                    appt.specialty,
-                                    style: const TextStyle(
-                                      color: AppTheme.textSecondary,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // Status chip
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: (isPast
-                                        ? AppTheme.textSecondary
-                                        : accent)
-                                    .withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: (isPast
-                                          ? AppTheme.textSecondary
-                                          : accent)
-                                      .withValues(alpha: 0.3),
-                                ),
-                              ),
-                              child: Text(
-                                appt.status,
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: accent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(icon, color: accent, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                appt.doctorName,
                                 style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
                                   color:
-                                      isPast ? AppTheme.textSecondary : accent,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
+                                      isPast
+                                          ? AppTheme.textSecondary
+                                          : Colors.white,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        // Date & location
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.calendar_today_rounded,
-                              color: AppTheme.textSecondary,
-                              size: 14,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '$dateStr at $timeStr',
-                              style: const TextStyle(
-                                color: AppTheme.textSecondary,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on_rounded,
-                              color: AppTheme.textSecondary,
-                              size: 14,
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                appt.location,
+                              Text(
+                                appt.specialty,
                                 style: const TextStyle(
                                   color: AppTheme.textSecondary,
-                                  fontSize: 13,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        // Action buttons for upcoming
-                        if (!isPast) ...[
-                          const SizedBox(height: 14),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        accent,
-                                        accent.withValues(alpha: 0.7),
-                                      ],
-                                    ),
-                                    boxShadow: AppTheme.glow(accent, blur: 10),
-                                  ),
-                                  child: ElevatedButton.icon(
-                                    onPressed: () => _reschedule(appt),
-                                    icon: const Icon(
-                                      Icons.calendar_month_rounded,
-                                      size: 16,
-                                    ),
-                                    label: const Text('Reschedule'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.transparent,
-                                      shadowColor: Colors.transparent,
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 10,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: AppTheme.glassWhite,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: AppTheme.glassBorder,
-                                  ),
-                                ),
-                                child: IconButton(
-                                  icon: Icon(
-                                    Icons.arrow_forward_rounded,
-                                    color: accent,
-                                  ),
-                                  onPressed: () => _showDetails(appt),
+                                  fontSize: 12,
                                 ),
                               ),
                             ],
                           ),
-                        ],
+                        ),
+                        // Status chip
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: (isPast ? AppTheme.textSecondary : accent)
+                                .withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: (isPast ? AppTheme.textSecondary : accent)
+                                  .withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Text(
+                            appt.status,
+                            style: TextStyle(
+                              color: isPast ? AppTheme.textSecondary : accent,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 12),
+                    // Date & location
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.calendar_today_rounded,
+                          color: AppTheme.textSecondary,
+                          size: 14,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '$dateStr at $timeStr',
+                          style: const TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on_rounded,
+                          color: AppTheme.textSecondary,
+                          size: 14,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            appt.location,
+                            style: const TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 13,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Action buttons for upcoming
+                    if (!isPast) ...[
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                gradient: LinearGradient(
+                                  colors: [
+                                    accent,
+                                    accent.withValues(alpha: 0.7),
+                                  ],
+                                ),
+                                boxShadow: AppTheme.glow(accent, blur: 10),
+                              ),
+                              child: ElevatedButton.icon(
+                                onPressed: () => _reschedule(appt),
+                                icon: const Icon(
+                                  Icons.calendar_month_rounded,
+                                  size: 16,
+                                ),
+                                label: const Text('Reschedule'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: AppTheme.glassWhite,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppTheme.glassBorder),
+                            ),
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.arrow_forward_rounded,
+                                color: accent,
+                              ),
+                              onPressed: () => _showDetails(appt),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

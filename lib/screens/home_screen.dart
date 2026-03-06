@@ -1,6 +1,5 @@
 // Home dashboard screen — glassmorphic cards, accent color highlights,
 // gradient header, animated widgets, nebula background.
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -572,55 +571,49 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppTheme.glassWhite,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: accent.withValues(alpha: 0.25)),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0x28FFFFFF),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: accent.withValues(alpha: 0.25)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: accent, size: 20),
               ),
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: accent.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(icon, color: accent, size: 20),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    value,
-                    style: TextStyle(
-                      color: accent,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 11,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Tap to log',
-                    style: TextStyle(
-                      color: accent.withValues(alpha: 0.6),
-                      fontSize: 10,
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 8),
+              Text(
+                value,
+                style: TextStyle(
+                  color: accent,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
               ),
-            ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 11,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Tap to log',
+                style: TextStyle(
+                  color: accent.withValues(alpha: 0.6),
+                  fontSize: 10,
+                ),
+              ),
+            ],
           ),
         ),
       ),

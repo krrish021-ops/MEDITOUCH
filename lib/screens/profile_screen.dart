@@ -2,7 +2,6 @@
 /// gradient save button, nebula background.
 library;
 
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
@@ -333,42 +332,33 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       children: [
                         _smallLabel('Gender'),
                         const SizedBox(height: 6),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppTheme.glassWhite,
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: AppTheme.glassBorder),
-                              ),
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<String>(
-                                  value: _gender,
-                                  isExpanded: true,
-                                  dropdownColor: AppTheme.bgSecondary,
-                                  items:
-                                      [
-                                            'Male',
-                                            'Female',
-                                            'Other',
-                                            'Prefer not to say',
-                                          ]
-                                          .map(
-                                            (g) => DropdownMenuItem(
-                                              value: g,
-                                              child: Text(g),
-                                            ),
-                                          )
-                                          .toList(),
-                                  onChanged:
-                                      (v) => setState(() => _gender = v!),
-                                ),
-                              ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0x28FFFFFF),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppTheme.glassBorder),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: _gender,
+                              isExpanded: true,
+                              dropdownColor: AppTheme.bgSecondary,
+                              items:
+                                  [
+                                        'Male',
+                                        'Female',
+                                        'Other',
+                                        'Prefer not to say',
+                                      ]
+                                      .map(
+                                        (g) => DropdownMenuItem(
+                                          value: g,
+                                          child: Text(g),
+                                        ),
+                                      )
+                                      .toList(),
+                              onChanged: (v) => setState(() => _gender = v!),
                             ),
                           ),
                         ),
@@ -514,71 +504,65 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       bmiColor = AppTheme.radiantPink;
     }
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppTheme.glassWhite,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: bmiColor.withValues(alpha: 0.3)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [bmiColor, bmiColor.withValues(alpha: 0.6)],
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: AppTheme.glow(bmiColor, blur: 12),
+    return Container(
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(18)),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0x28FFFFFF),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: bmiColor.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [bmiColor, bmiColor.withValues(alpha: 0.6)],
                 ),
-                child: Center(
-                  child: Text(
-                    bmi.toStringAsFixed(1),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: AppTheme.glow(bmiColor, blur: 12),
+              ),
+              child: Center(
+                child: Text(
+                  bmi.toStringAsFixed(1),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
                   ),
                 ),
               ),
-              const SizedBox(width: 14),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'BMI',
-                    style: TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 12,
-                    ),
+            ),
+            const SizedBox(width: 14),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'BMI',
+                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                ),
+                Text(
+                  cat,
+                  style: TextStyle(
+                    color: bmiColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
-                  Text(
-                    cat,
-                    style: TextStyle(
-                      color: bmiColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                ),
+                Text(
+                  '${p.height?.toInt() ?? 0} cm · ${p.weight?.toInt() ?? 0} kg',
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 12,
                   ),
-                  Text(
-                    '${p.height?.toInt() ?? 0} cm · ${p.weight?.toInt() ?? 0} kg',
-                    style: const TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

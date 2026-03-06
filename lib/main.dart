@@ -1,6 +1,5 @@
 ﻿// Smart Health Reminder app entry point.
 // Splash → Onboarding (if first time) → Main app with bottom navigation.
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'theme/app_theme.dart';
@@ -97,83 +96,79 @@ class AppShell extends ConsumerWidget {
     return Scaffold(
       extendBody: true,
       body: IndexedStack(index: currentTab, children: _screens),
-      bottomNavigationBar: ClipRRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-          child: Container(
-            decoration: const BoxDecoration(
-              color: Color(0xCC181A20), // 80% bgPrimary
-              border: Border(
-                top: BorderSide(color: AppTheme.glassBorder, width: 0.5),
-              ),
-            ),
-            padding: const EdgeInsets.only(top: 8, bottom: 8),
-            child: SafeArea(
-              top: false,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: List.generate(_navItems.length, (i) {
-                  final item = _navItems[i];
-                  final selected = currentTab == i;
-                  return GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap:
-                        () => ref.read(currentTabProvider.notifier).state = i,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: Color(
+            0xE6181A20,
+          ), // 90% bgPrimary — opaque enough without blur
+          border: Border(
+            top: BorderSide(color: AppTheme.glassBorder, width: 0.5),
+          ),
+        ),
+        padding: const EdgeInsets.only(top: 8, bottom: 8),
+        child: SafeArea(
+          top: false,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(_navItems.length, (i) {
+              final item = _navItems[i];
+              final selected = currentTab == i;
+              return GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => ref.read(currentTabProvider.notifier).state = i,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color:
+                        selected
+                            ? AppTheme.electricBlue.withValues(alpha: 0.15)
+                            : Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        selected ? item.activeIcon : item.icon,
                         color:
                             selected
-                                ? AppTheme.electricBlue.withValues(alpha: 0.15)
-                                : Colors.transparent,
-                        borderRadius: BorderRadius.circular(16),
+                                ? AppTheme.electricBlue
+                                : AppTheme.textSecondary,
+                        size: 24,
+                        shadows:
+                            selected
+                                ? [
+                                  Shadow(
+                                    color: AppTheme.electricBlue.withValues(
+                                      alpha: 0.5,
+                                    ),
+                                    blurRadius: 12,
+                                  ),
+                                ]
+                                : null,
                       ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            selected ? item.activeIcon : item.icon,
-                            color:
-                                selected
-                                    ? AppTheme.electricBlue
-                                    : AppTheme.textSecondary,
-                            size: 24,
-                            shadows:
-                                selected
-                                    ? [
-                                      Shadow(
-                                        color: AppTheme.electricBlue.withValues(
-                                          alpha: 0.5,
-                                        ),
-                                        blurRadius: 12,
-                                      ),
-                                    ]
-                                    : null,
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            item.label,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight:
-                                  selected ? FontWeight.w600 : FontWeight.w400,
-                              color:
-                                  selected
-                                      ? AppTheme.electricBlue
-                                      : AppTheme.textSecondary,
-                            ),
-                          ),
-                        ],
+                      const SizedBox(height: 3),
+                      Text(
+                        item.label,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight:
+                              selected ? FontWeight.w600 : FontWeight.w400,
+                          color:
+                              selected
+                                  ? AppTheme.electricBlue
+                                  : AppTheme.textSecondary,
+                        ),
                       ),
-                    ),
-                  );
-                }),
-              ),
-            ),
+                    ],
+                  ),
+                ),
+              );
+            }),
           ),
         ),
       ),

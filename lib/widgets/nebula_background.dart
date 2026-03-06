@@ -21,7 +21,7 @@ class _NebulaBackgroundState extends State<NebulaBackground>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 12),
+      duration: const Duration(seconds: 30), // slower = fewer repaints needed
     )..repeat();
   }
 
@@ -33,40 +33,41 @@ class _NebulaBackgroundState extends State<NebulaBackground>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (context, child) {
-        final t = _ctrl.value;
-        return Container(
-          decoration: AppTheme.scaffoldGradient,
-          child: Stack(
+    return Container(
+      decoration: AppTheme.scaffoldGradient,
+      child: AnimatedBuilder(
+        animation: _ctrl,
+        builder: (context, child) {
+          final t = _ctrl.value;
+          final angle = t * 2 * math.pi;
+          return Stack(
             children: [
               // Floating orb 1 – Electric Blue
               Positioned(
-                top: 80 + 30 * math.sin(t * 2 * math.pi),
-                right: 30 + 20 * math.cos(t * 2 * math.pi),
+                top: 80 + 30 * math.sin(angle),
+                right: 30 + 20 * math.cos(angle),
                 child: _orb(100, AppTheme.electricBlue.withValues(alpha: 0.07)),
               ),
               // Floating orb 2 – Radiant Pink
               Positioned(
-                bottom: 200 + 40 * math.cos(t * 2 * math.pi + 1),
-                left: 20 + 25 * math.sin(t * 2 * math.pi + 1),
+                bottom: 200 + 40 * math.cos(angle + 1),
+                left: 20 + 25 * math.sin(angle + 1),
                 child: _orb(140, AppTheme.radiantPink.withValues(alpha: 0.06)),
               ),
               // Floating orb 3 – Neon Green
               Positioned(
                 top:
                     MediaQuery.of(context).size.height * 0.45 +
-                    20 * math.sin(t * 2 * math.pi + 2),
-                right: 60 + 30 * math.cos(t * 2 * math.pi + 2),
+                    20 * math.sin(angle + 2),
+                right: 60 + 30 * math.cos(angle + 2),
                 child: _orb(80, AppTheme.neonGreen.withValues(alpha: 0.05)),
               ),
               child!,
             ],
-          ),
-        );
-      },
-      child: widget.child,
+          );
+        },
+        child: widget.child,
+      ),
     );
   }
 

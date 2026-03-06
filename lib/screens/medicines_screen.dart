@@ -2,7 +2,6 @@
 /// neon filter chips, nebula background.
 library;
 
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
@@ -226,7 +225,7 @@ class _MedicinesScreenState extends ConsumerState<MedicinesScreen> {
           ],
         ),
         floatingActionButton: Padding(
-          padding: const EdgeInsets.only(bottom: 30),
+          padding: const EdgeInsets.only(bottom: 80),
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(28),
@@ -292,13 +291,9 @@ class _MedicinesScreenState extends ConsumerState<MedicinesScreen> {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-          child: Container(
+      child: Container(
             decoration: BoxDecoration(
-              color: AppTheme.glassWhite,
+              color: const Color(0x28FFFFFF),
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: accent.withValues(alpha: 0.2)),
             ),
@@ -585,8 +580,6 @@ class _MedicinesScreenState extends ConsumerState<MedicinesScreen> {
               ],
             ),
           ),
-        ),
-      ),
     );
   }
 

@@ -1,8 +1,7 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
-/// Glassmorphic card: blurred semi-transparent background with a subtle
+/// Glassmorphic card: semi-transparent background with a subtle
 /// coloured border and optional accent glow. Used everywhere for cards,
 /// modals, and overlays per the README design spec.
 class GlassCard extends StatelessWidget {
@@ -25,24 +24,16 @@ class GlassCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: margin ?? const EdgeInsets.symmetric(vertical: 6),
-      child: ClipRRect(
+      padding: padding ?? const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0x28FFFFFF), // semi-transparent glass effect
         borderRadius: BorderRadius.circular(borderRadius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: Container(
-            padding: padding ?? const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.glassWhite,
-              borderRadius: BorderRadius.circular(borderRadius),
-              border: Border.all(
-                color: borderColor ?? AppTheme.glassBorder,
-                width: 1,
-              ),
-            ),
-            child: child,
-          ),
+        border: Border.all(
+          color: borderColor ?? AppTheme.glassBorder,
+          width: 1,
         ),
       ),
+      child: child,
     );
   }
 }

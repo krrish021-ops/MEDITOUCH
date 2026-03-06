@@ -24,13 +24,13 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
-    // Gradient shift
+    // Gradient shift — slowed down to reduce frame cost
     _gradCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 4),
+      duration: const Duration(seconds: 8),
     )..repeat();
 
-    // Pulsing glow on logo
+    // Pulsing glow on logo — simpler, no box shadows
     _pulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -70,17 +70,15 @@ class _SplashScreenState extends State<SplashScreen>
       animation: _gradCtrl,
       builder: (context, child) {
         final t = _gradCtrl.value;
+        // Pre-compute trig values once per frame
+        final angle = t * 2 * math.pi;
+        final cosA = math.cos(angle);
+        final sinA = math.sin(angle);
         return Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment(
-                math.cos(t * 2 * math.pi),
-                math.sin(t * 2 * math.pi),
-              ),
-              end: Alignment(
-                -math.cos(t * 2 * math.pi),
-                -math.sin(t * 2 * math.pi),
-              ),
+              begin: Alignment(cosA, sinA),
+              end: Alignment(-cosA, -sinA),
               colors: const [
                 AppTheme.electricBlue,
                 AppTheme.bgPrimary,
@@ -98,29 +96,18 @@ class _SplashScreenState extends State<SplashScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Pulsing glow ring + icon
+              // Pulsing scale effect instead of expensive box shadow
               AnimatedBuilder(
                 animation: _pulse,
                 builder: (context, child) {
-                  return Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.electricBlue.withValues(
-                            alpha: 0.5 * _pulse.value,
-                          ),
-                          blurRadius: 40 * _pulse.value,
-                          spreadRadius: 8 * _pulse.value,
-                        ),
-                      ],
-                    ),
+                  return Transform.scale(
+                    scale: 0.9 + 0.1 * _pulse.value,
                     child: child,
                   );
                 },
                 child: Container(
+                  width: 120,
+                  height: 120,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: AppTheme.accentGradient,

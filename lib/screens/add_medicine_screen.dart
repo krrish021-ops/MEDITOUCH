@@ -2,7 +2,6 @@
 /// accent-colored time chips, nebula background.
 library;
 
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
@@ -191,39 +190,28 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
                         children: [
                           _sectionLabel('Form', color: AppTheme.vividOrange),
                           const SizedBox(height: 8),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(14),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.glassWhite,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: AppTheme.glassBorder,
-                                  ),
-                                ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: _form,
-                                    isExpanded: true,
-                                    dropdownColor: AppTheme.bgSecondary,
-                                    items:
-                                        _forms
-                                            .map(
-                                              (f) => DropdownMenuItem(
-                                                value: f,
-                                                child: Text(f),
-                                              ),
-                                            )
-                                            .toList(),
-                                    onChanged:
-                                        (v) => setState(() => _form = v!),
-                                  ),
-                                ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0x28FFFFFF),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: AppTheme.glassBorder),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _form,
+                                isExpanded: true,
+                                dropdownColor: AppTheme.bgSecondary,
+                                items:
+                                    _forms
+                                        .map(
+                                          (f) => DropdownMenuItem(
+                                            value: f,
+                                            child: Text(f),
+                                          ),
+                                        )
+                                        .toList(),
+                                onChanged: (v) => setState(() => _form = v!),
                               ),
                             ),
                           ),
@@ -240,44 +228,33 @@ class _AddMedicineScreenState extends ConsumerState<AddMedicineScreen> {
                             color: AppTheme.radiantPink,
                           ),
                           const SizedBox(height: 8),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(14),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.glassWhite,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: AppTheme.glassBorder,
-                                  ),
-                                ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: _freq,
-                                    isExpanded: true,
-                                    dropdownColor: AppTheme.bgSecondary,
-                                    items:
-                                        _freqs
-                                            .map(
-                                              (f) => DropdownMenuItem(
-                                                value: f,
-                                                child: Text(
-                                                  f,
-                                                  style: const TextStyle(
-                                                    fontSize: 13,
-                                                  ),
-                                                ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0x28FFFFFF),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: AppTheme.glassBorder),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _freq,
+                                isExpanded: true,
+                                dropdownColor: AppTheme.bgSecondary,
+                                items:
+                                    _freqs
+                                        .map(
+                                          (f) => DropdownMenuItem(
+                                            value: f,
+                                            child: Text(
+                                              f,
+                                              style: const TextStyle(
+                                                fontSize: 13,
                                               ),
-                                            )
-                                            .toList(),
-                                    onChanged:
-                                        (v) => setState(() => _freq = v!),
-                                  ),
-                                ),
+                                            ),
+                                          ),
+                                        )
+                                        .toList(),
+                                onChanged: (v) => setState(() => _freq = v!),
                               ),
                             ),
                           ),

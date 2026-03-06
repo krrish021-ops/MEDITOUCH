@@ -1,5 +1,6 @@
 /// In-memory repository for appointments.
 library;
+
 import '../models/models.dart';
 
 class AppointmentsRepository {
@@ -47,6 +48,14 @@ class AppointmentsRepository {
   Appointment? getNextUpcoming() {
     final upcoming = getUpcoming();
     return upcoming.isEmpty ? null : upcoming.first;
+  }
+
+  Appointment? getById(String id) {
+    try {
+      return _appointments.firstWhere((a) => a.id == id);
+    } catch (_) {
+      return null;
+    }
   }
 
   void add(Appointment appointment) => _appointments.add(appointment);
