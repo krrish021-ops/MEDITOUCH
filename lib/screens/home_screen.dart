@@ -10,6 +10,8 @@ import '../models/models.dart';
 import '../services/notification_service.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/nebula_background.dart';
+import '../widgets/user_avatar.dart';
+import 'patient_notifications_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -31,7 +33,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final profile = ref.watch(profileProvider);
     final medicines = ref.watch(medicinesProvider);
-    final appointmentsNotifier = ref.read(appointmentsProvider.notifier);
+    // Use real-time stream for appointments so status reflects instantly
+    final apptStream = ref.watch(patientAppointmentsStreamProvider);
+    final liveAppointments = apptStream.when(
+      data: (list) => list,
+      loading: () => ref.read(appointmentsProvider),
+      error: (_, __) => ref.read(appointmentsProvider),
+    );
     final checkIn = ref.watch(checkInProvider);
     final water = ref.watch(waterIntakeProvider);
     final vitals = ref.watch(vitalsProvider);
@@ -54,7 +62,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (nextMed != null) break;
     }
 
-    final nextAppt = appointmentsNotifier.nextUpcoming;
+    final nextAppt =
+        (() {
+          final now = DateTime.now();
+          final upcoming =
+              liveAppointments.where((a) => a.dateTime.isAfter(now)).toList()
+                ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+          return upcoming.isEmpty ? null : upcoming.first;
+        })();
     final tipIndex =
         DateTime.now().difference(DateTime(DateTime.now().year)).inDays %
         kHealthTips.length;
@@ -140,27 +155,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ─── Greeting ─────────────────────────────────────────────────────
   Widget _buildGreeting(BuildContext context, UserProfile profile) {
     final dateStr = DateFormat('EEEE, MMM d').format(DateTime.now());
+    // Watch real-time notification stream for unread badge
+    final notifStream = ref.watch(patientNotificationsStreamProvider);
+    final unreadCount = notifStream.when(
+      data: (list) => list.where((n) => !n.isRead).length,
+      loading: () => 0,
+      error: (_, __) => 0,
+    );
     return GlassCard(
       child: Row(
         children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              gradient: AppTheme.accentGradient,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: AppTheme.glow(AppTheme.electricBlue, blur: 14),
-            ),
-            child: Center(
-              child: Text(
-                profile.name.isNotEmpty ? profile.name[0].toUpperCase() : '?',
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
+          UserAvatar(
+            imageUrl: profile.profilePicture,
+            name: profile.name,
+            radius: 24,
+            showGlow: false,
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -191,29 +200,50 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               color: AppTheme.glassWhite,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.notifications_outlined,
-                color: AppTheme.electricBlue,
-                size: 24,
-              ),
-              onPressed: () async {
-                await NotificationService().requestPermissions();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text(
-                        'Notification permissions requested.',
+            child: Stack(
+              children: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.notifications_outlined,
+                    color: AppTheme.electricBlue,
+                    size: 24,
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PatientNotificationsScreen(),
                       ),
-                      backgroundColor: AppTheme.electricBlue,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                    );
+                  },
+                ),
+                if (unreadCount > 0)
+                  Positioned(
+                    right: 6,
+                    top: 6,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.radiantPink,
+                        shape: BoxShape.circle,
+                        boxShadow: AppTheme.glow(AppTheme.radiantPink, blur: 6),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 18,
+                        minHeight: 18,
+                      ),
+                      child: Text(
+                        unreadCount > 9 ? '9+' : '$unreadCount',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  );
-                }
-              },
+                  ),
+              ],
             ),
           ),
         ],

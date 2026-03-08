@@ -1,6 +1,6 @@
 {
-    "name": "smart_health_reminder",
-    "short_name": "smart_health_reminder",
+    "name": "BADTOUCH",
+    "short_name": "BADTOUCH",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

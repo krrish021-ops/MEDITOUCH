@@ -1,6 +1,8 @@
 /// Firestore-backed repository for appointments.
 library;
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
 import '../models/models.dart';
 import '../services/firestore_service.dart';
 
@@ -39,23 +41,87 @@ class AppointmentsRepository {
     }
   }
 
-  Future<void> add(Appointment appointment) async {
+  Future<void> add(Appointment appointment, {String patientName = ''}) async {
+    // Use doctorId from the appointment if already provided (from doctor search)
+    final doctorId = appointment.doctorId;
+
+    // Enrich appointment with patient info
+    final enriched = Appointment(
+      id: appointment.id,
+      doctorName: appointment.doctorName,
+      specialty: appointment.specialty,
+      dateTime: appointment.dateTime,
+      location: appointment.location,
+      notes: appointment.notes,
+      status: 'pending',
+      patientId: _firestore.uid,
+      patientName: patientName,
+      doctorId: doctorId,
+    );
+
+    // Save to user's personal appointments collection
     await _firestore.appointmentsCollection
-        .doc(appointment.id)
-        .set(appointment.toMap());
-    _appointments.add(appointment);
+        .doc(enriched.id)
+        .set(enriched.toMap());
+
+    // Also save to the shared appointments collection for the admin/doctor
+    await _firestore.sharedAppointmentsCollection
+        .doc(enriched.id)
+        .set(enriched.toMap());
+
+    // Create an admin notification for the doctor
+    final notification = AdminNotification(
+      id: const Uuid().v4(),
+      type: 'appointment',
+      title: 'New Appointment Request',
+      body: '$patientName booked an appointment for ${appointment.specialty}',
+      timestamp: DateTime.now(),
+      referenceId: enriched.id,
+    );
+
+    if (doctorId != null && doctorId.isNotEmpty) {
+      // Write to the doctor's personal notifications sub-collection
+      try {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(doctorId)
+            .collection('adminNotifications')
+            .doc(notification.id)
+            .set(notification.toMap());
+      } catch (_) {
+        // Don't let notification failure block appointment creation
+      }
+    }
+
+    _appointments.add(enriched);
   }
 
   Future<void> update(Appointment appointment) async {
     await _firestore.appointmentsCollection
         .doc(appointment.id)
         .update(appointment.toMap());
+    // Also update shared collection
+    await _firestore.sharedAppointmentsCollection
+        .doc(appointment.id)
+        .set(appointment.toMap());
     final index = _appointments.indexWhere((a) => a.id == appointment.id);
     if (index != -1) _appointments[index] = appointment;
   }
 
   Future<void> delete(String id) async {
     await _firestore.appointmentsCollection.doc(id).delete();
+    // Also delete from shared collection
+    await _firestore.sharedAppointmentsCollection.doc(id).delete();
     _appointments.removeWhere((a) => a.id == id);
+  }
+
+  /// Real-time stream of patient's appointments — reflects doctor accept/decline instantly.
+  Stream<List<Appointment>> watchAppointments() {
+    return _firestore.appointmentsCollection.snapshots().map((snapshot) {
+      _appointments =
+          snapshot.docs.map((doc) => Appointment.fromMap(doc.data())).toList()
+            ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+      return _appointments;
+    });
   }
 }

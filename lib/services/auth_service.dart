@@ -1,5 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../services/fcm_service.dart';
+import '../services/push_notification_listener.dart';
+
 class AuthService {
   static final AuthService _instance = AuthService._internal();
   factory AuthService() => _instance;
@@ -40,6 +43,8 @@ class AuthService {
 
   /// Sign out.
   Future<void> signOut() async {
+    PushNotificationListener().stopListening();
+    await FcmService().clearToken();
     await _auth.signOut();
   }
 

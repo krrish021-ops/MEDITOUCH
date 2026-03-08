@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 import '../theme/app_theme.dart';
 import '../services/auth_service.dart';
 import '../widgets/nebula_background.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/avatar_picker.dart';
+
+/// Completer that _AppLoader can await to ensure sign-up writes finish
+/// before trying to load the profile.
+Completer<void>? signUpWritesCompleter;
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -14,6 +21,8 @@ class AuthScreen extends StatefulWidget {
 class _AuthScreenState extends State<AuthScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
+  final _usernameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
@@ -24,6 +33,9 @@ class _AuthScreenState extends State<AuthScreen>
   bool _obscurePass = true;
   bool _obscureConfirm = true;
   String? _error;
+  String _role = 'user'; // 'user' or 'doctor'
+  int _avatarThemeIndex = 0; // index into kAvatarThemes
+  int _avatarVariant = 0;
 
   late final AnimationController _fadeCtrl;
   late final Animation<double> _fade;
@@ -41,6 +53,8 @@ class _AuthScreenState extends State<AuthScreen>
 
   @override
   void dispose() {
+    _nameCtrl.dispose();
+    _usernameCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmCtrl.dispose();
@@ -71,14 +85,111 @@ class _AuthScreenState extends State<AuthScreen>
           password: _passwordCtrl.text,
         );
       } else {
-        await _auth.signUp(
+        // Check unique username before creating account
+        final name = _nameCtrl.text.trim();
+        final username = _usernameCtrl.text.trim().toLowerCase();
+
+        // Check username availability (allows unauthenticated reads)
+        final usernameDoc =
+            await FirebaseFirestore.instance
+                .collection('usernames')
+                .doc(username)
+                .get();
+        if (usernameDoc.exists) {
+          setState(() {
+            _error =
+                'The username "@$username" is already taken. Please choose a different one.';
+            _loading = false;
+          });
+          return;
+        }
+
+        // Set up a completer so _AppLoader knows to wait for writes
+        signUpWritesCompleter = Completer<void>();
+
+        // Create the Firebase Auth account first
+        final cred = await _auth.signUp(
           email: _emailCtrl.text.trim(),
           password: _passwordCtrl.text,
         );
+
+        // Now the user is authenticated — write all Firestore data
+        if (cred.user != null) {
+          try {
+            final isDoctor = _role == 'doctor';
+            final batch = FirebaseFirestore.instance.batch();
+
+            // Generate avatar using selected theme
+            final avatarSeed =
+                _avatarVariant == 0 ? username : '${username}_v$_avatarVariant';
+            final avatarUrl = kAvatarThemes[_avatarThemeIndex].generateUrl(
+              avatarSeed,
+            );
+
+            // Reserve the username
+            batch.set(
+              FirebaseFirestore.instance.collection('usernames').doc(username),
+              {'uid': cred.user!.uid, 'name': name},
+            );
+
+            // Create the user profile
+            batch.set(
+              FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(cred.user!.uid)
+                  .collection('profile')
+                  .doc('default_user'),
+              {
+                'id': cred.user!.uid,
+                'name': name,
+                'username': username,
+                'role': _role,
+                'onboardingComplete': isDoctor,
+                'healthConditions': <String>[],
+                'allergies': <String>[],
+                'profilePicture': avatarUrl,
+              },
+            );
+
+            // If doctor, also create doctorProfiles entry
+            if (isDoctor) {
+              batch.set(
+                FirebaseFirestore.instance
+                    .collection('doctorProfiles')
+                    .doc(cred.user!.uid),
+                {
+                  'id': cred.user!.uid,
+                  'name': name,
+                  'username': username,
+                  'specialty': '',
+                  'phone': '',
+                  'email': _emailCtrl.text.trim(),
+                  'bio': '',
+                  'availability': [],
+                  'profilePicture': avatarUrl,
+                },
+              );
+            }
+
+            // Commit all writes atomically
+            await batch.commit();
+          } finally {
+            // Signal that writes are done (success or failure)
+            signUpWritesCompleter?.complete();
+            signUpWritesCompleter = null;
+          }
+        } else {
+          signUpWritesCompleter?.complete();
+          signUpWritesCompleter = null;
+        }
       }
     } on FirebaseAuthException catch (e) {
       setState(() {
         _error = _friendlyError(e.code);
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Something went wrong: ${e.toString()}';
       });
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -197,6 +308,70 @@ class _AuthScreenState extends State<AuthScreen>
                       key: _formKey,
                       child: Column(
                         children: [
+                          // Name (sign up only)
+                          if (!_isLogin) ...[
+                            TextFormField(
+                              controller: _nameCtrl,
+                              style: const TextStyle(
+                                color: AppTheme.textPrimary,
+                              ),
+                              decoration: _inputDecor(
+                                'Full Name',
+                                Icons.person_outline,
+                              ),
+                              validator: (v) {
+                                if (!_isLogin &&
+                                    (v == null || v.trim().isEmpty)) {
+                                  return 'Enter your name';
+                                }
+                                if (!_isLogin &&
+                                    v != null &&
+                                    v.trim().length < 2) {
+                                  return 'Name must be at least 2 characters';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            // Username (like Instagram)
+                            TextFormField(
+                              controller: _usernameCtrl,
+                              style: const TextStyle(
+                                color: AppTheme.textPrimary,
+                              ),
+                              decoration: _inputDecor(
+                                'Username',
+                                Icons.alternate_email,
+                              ).copyWith(
+                                hintText: 'e.g. john_doe',
+                                hintStyle: TextStyle(
+                                  color: AppTheme.textSecondary.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                ),
+                              ),
+                              validator: (v) {
+                                if (!_isLogin &&
+                                    (v == null || v.trim().isEmpty)) {
+                                  return 'Choose a username';
+                                }
+                                if (!_isLogin && v != null) {
+                                  final trimmed = v.trim();
+                                  if (trimmed.length < 3) {
+                                    return 'Username must be at least 3 characters';
+                                  }
+                                  if (!RegExp(
+                                    r'^[a-zA-Z0-9._]+$',
+                                  ).hasMatch(trimmed)) {
+                                    return 'Only letters, numbers, dots and underscores';
+                                  }
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+
                           // Email
                           TextFormField(
                             controller: _emailCtrl,
@@ -286,6 +461,204 @@ class _AuthScreenState extends State<AuthScreen>
                                 }
                                 return null;
                               },
+                            ),
+                            const SizedBox(height: 16),
+                            // Role selector
+                            Row(
+                              children: [
+                                const Text(
+                                  'I am a:',
+                                  style: TextStyle(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      _RoleChip(
+                                        label: 'Patient',
+                                        icon: Icons.person_outline,
+                                        selected: _role == 'user',
+                                        onTap:
+                                            () =>
+                                                setState(() => _role = 'user'),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      _RoleChip(
+                                        label: 'Doctor',
+                                        icon: Icons.medical_services_outlined,
+                                        selected: _role == 'doctor',
+                                        onTap:
+                                            () => setState(
+                                              () => _role = 'doctor',
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            // Avatar style picker
+                            const SizedBox(height: 20),
+                            const Text(
+                              'Pick your avatar style:',
+                              style: TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            // Preview current avatar
+                            Center(
+                              child: Container(
+                                padding: const EdgeInsets.all(3),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: AppTheme.accentGradient,
+                                  boxShadow: AppTheme.glow(
+                                    kAvatarThemes[_avatarThemeIndex].color,
+                                    blur: 14,
+                                  ),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 36,
+                                  backgroundColor: AppTheme.bgPrimary,
+                                  backgroundImage: NetworkImage(
+                                    kAvatarThemes[_avatarThemeIndex].generateUrl(
+                                      _avatarVariant == 0
+                                          ? (_usernameCtrl.text
+                                                  .trim()
+                                                  .isNotEmpty
+                                              ? _usernameCtrl.text
+                                                  .trim()
+                                                  .toLowerCase()
+                                              : 'default')
+                                          : '${_usernameCtrl.text.trim().toLowerCase()}_v$_avatarVariant',
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            // Horizontal theme selector
+                            SizedBox(
+                              height: 44,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: kAvatarThemes.length,
+                                itemBuilder: (_, i) {
+                                  final t = kAvatarThemes[i];
+                                  final isSelected = i == _avatarThemeIndex;
+                                  return GestureDetector(
+                                    onTap:
+                                        () => setState(
+                                          () => _avatarThemeIndex = i,
+                                        ),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
+                                      margin: const EdgeInsets.only(right: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        color:
+                                            isSelected
+                                                ? t.color.withValues(alpha: 0.2)
+                                                : AppTheme.glassWhite,
+                                        border: Border.all(
+                                          color:
+                                              isSelected
+                                                  ? t.color
+                                                  : AppTheme.glassBorder,
+                                          width: isSelected ? 2 : 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            t.icon,
+                                            size: 16,
+                                            color: t.color,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            t.name,
+                                            style: TextStyle(
+                                              color:
+                                                  isSelected
+                                                      ? t.color
+                                                      : AppTheme.textSecondary,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            // Variant selector
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              height: 40,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: 6,
+                                itemBuilder: (_, i) {
+                                  final isSelected = i == _avatarVariant;
+                                  return GestureDetector(
+                                    onTap:
+                                        () =>
+                                            setState(() => _avatarVariant = i),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
+                                      margin: const EdgeInsets.only(right: 8),
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color:
+                                              isSelected
+                                                  ? kAvatarThemes[_avatarThemeIndex]
+                                                      .color
+                                                  : AppTheme.glassBorder,
+                                          width: isSelected ? 2 : 1,
+                                        ),
+                                      ),
+                                      child: CircleAvatar(
+                                        radius: 16,
+                                        backgroundColor: AppTheme.bgPrimary,
+                                        backgroundImage: NetworkImage(
+                                          kAvatarThemes[_avatarThemeIndex]
+                                              .generateUrl(
+                                                i == 0
+                                                    ? (_usernameCtrl.text
+                                                            .trim()
+                                                            .isNotEmpty
+                                                        ? _usernameCtrl.text
+                                                            .trim()
+                                                            .toLowerCase()
+                                                        : 'default')
+                                                    : '${_usernameCtrl.text.trim().isNotEmpty ? _usernameCtrl.text.trim().toLowerCase() : 'default'}_v$i',
+                                              ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
                           ],
 
@@ -455,6 +828,65 @@ class _AuthScreenState extends State<AuthScreen>
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AppTheme.radiantPink),
+      ),
+    );
+  }
+}
+
+class _RoleChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _RoleChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color:
+                selected
+                    ? AppTheme.electricBlue.withValues(alpha: 0.2)
+                    : AppTheme.glassWhite,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: selected ? AppTheme.electricBlue : AppTheme.glassBorder,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color:
+                    selected ? AppTheme.electricBlue : AppTheme.textSecondary,
+                size: 18,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color:
+                      selected ? AppTheme.electricBlue : AppTheme.textSecondary,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

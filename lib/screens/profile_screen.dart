@@ -9,7 +9,9 @@ import '../providers/providers.dart';
 import '../models/models.dart';
 import '../widgets/nebula_background.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/user_avatar.dart';
 import '../services/auth_service.dart';
+import '../widgets/avatar_picker.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -104,31 +106,50 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
           child: Column(
             children: [
-              // Avatar with gradient border + glow
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: AppTheme.accentGradient,
-                  boxShadow: AppTheme.glow(
-                    AppTheme.electricBlue,
-                    blur: 20,
-                    spread: 2,
-                  ),
-                ),
-                child: CircleAvatar(
-                  radius: 44,
-                  backgroundColor: AppTheme.bgPrimary,
-                  child: Text(
-                    profile.name.isNotEmpty
-                        ? profile.name[0].toUpperCase()
-                        : '?',
-                    style: const TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.electricBlue,
+              // Avatar with gradient border + glow — tap to change
+              GestureDetector(
+                onTap: () async {
+                  final newUrl = await showAvatarPicker(
+                    context: context,
+                    seed: profile.username ?? profile.name,
+                    currentUrl: profile.profilePicture,
+                  );
+                  if (newUrl != null && mounted) {
+                    ref
+                        .read(profileProvider.notifier)
+                        .updateProfile(
+                          profile.copyWith(profilePicture: newUrl),
+                        );
+                  }
+                },
+                child: Stack(
+                  children: [
+                    UserAvatar(
+                      imageUrl: profile.profilePicture,
+                      name: profile.name,
+                      radius: 44,
                     ),
-                  ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.electricBlue,
+                          border: Border.all(
+                            color: AppTheme.bgPrimary,
+                            width: 2,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.edit_rounded,
+                          color: Colors.white,
+                          size: 14,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 10),

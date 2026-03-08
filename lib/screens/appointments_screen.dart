@@ -5,10 +5,15 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_theme.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
 import '../widgets/nebula_background.dart';
+import '../widgets/user_avatar.dart';
+import '../repositories/chat_repository.dart';
+import '../services/firestore_service.dart';
+import 'patient_chat_screen.dart';
 
 class AppointmentsScreen extends ConsumerStatefulWidget {
   const AppointmentsScreen({super.key});
@@ -57,24 +62,38 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final notifier = ref.read(appointmentsProvider.notifier);
-    ref.watch(appointmentsProvider);
+    // Use real-time stream for live appointment status updates
+    final streamData = ref.watch(patientAppointmentsStreamProvider);
+    final allAppointments = streamData.when(
+      data: (list) => list,
+      loading: () => ref.read(appointmentsProvider),
+      error: (_, __) => ref.read(appointmentsProvider),
+    );
+    final now = DateTime.now();
     final upcoming =
-        notifier.upcoming
+        allAppointments
             .where(
               (a) =>
-                  _search.isEmpty ||
-                  a.doctorName.toLowerCase().contains(_search.toLowerCase()),
+                  a.dateTime.isAfter(now) &&
+                  (_search.isEmpty ||
+                      a.doctorName.toLowerCase().contains(
+                        _search.toLowerCase(),
+                      )),
             )
-            .toList();
+            .toList()
+          ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
     final past =
-        notifier.past
+        allAppointments
             .where(
               (a) =>
-                  _search.isEmpty ||
-                  a.doctorName.toLowerCase().contains(_search.toLowerCase()),
+                  !a.dateTime.isAfter(now) &&
+                  (_search.isEmpty ||
+                      a.doctorName.toLowerCase().contains(
+                        _search.toLowerCase(),
+                      )),
             )
-            .toList();
+            .toList()
+          ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
 
     return NebulaBackground(
       child: Scaffold(
@@ -371,29 +390,48 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                             ],
                           ),
                         ),
-                        // Status chip
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: (isPast ? AppTheme.textSecondary : accent)
-                                .withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: (isPast ? AppTheme.textSecondary : accent)
-                                  .withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Text(
-                            appt.status,
-                            style: TextStyle(
-                              color: isPast ? AppTheme.textSecondary : accent,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                        // Status chip — color-coded per status
+                        Builder(
+                          builder: (_) {
+                            Color chipColor;
+                            switch (appt.status) {
+                              case 'accepted':
+                                chipColor = AppTheme.neonGreen;
+                                break;
+                              case 'declined':
+                                chipColor = AppTheme.radiantPink;
+                                break;
+                              case 'cancelled':
+                                chipColor = AppTheme.vividOrange;
+                                break;
+                              case 'pending':
+                              default:
+                                chipColor =
+                                    isPast ? AppTheme.textSecondary : accent;
+                            }
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: chipColor.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: chipColor.withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Text(
+                                appt.status[0].toUpperCase() +
+                                    appt.status.substring(1),
+                                style: TextStyle(
+                                  color: chipColor,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -472,6 +510,23 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                               ),
                             ),
                           ),
+                          const SizedBox(width: 10),
+                          if (appt.isAccepted && appt.doctorId != null)
+                            Container(
+                              decoration: BoxDecoration(
+                                color: AppTheme.glassWhite,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppTheme.glassBorder),
+                              ),
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.chat_rounded,
+                                  color: AppTheme.neonGreen,
+                                ),
+                                tooltip: 'Chat with Doctor',
+                                onPressed: () => _openChatWithDoctor(appt),
+                              ),
+                            ),
                           const SizedBox(width: 10),
                           Container(
                             decoration: BoxDecoration(
@@ -557,6 +612,15 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
               ],
             ),
             actions: [
+              if (appt.isAccepted && appt.doctorId != null)
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _openChatWithDoctor(appt);
+                  },
+                  icon: const Icon(Icons.chat_rounded, size: 18),
+                  label: const Text('Chat with Doctor'),
+                ),
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: const Text('Close'),
@@ -566,13 +630,46 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
     );
   }
 
+  void _openChatWithDoctor(Appointment appt) async {
+    if (appt.doctorId == null || appt.doctorId!.isEmpty) return;
+    try {
+      final patientName = ref.read(profileProvider).name;
+      final room = await ChatRepository().getOrCreateChatRoom(
+        doctorId: appt.doctorId!,
+        patientId: FirestoreService().uid,
+        doctorName: appt.doctorName,
+        patientName: patientName,
+      );
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (_) => PatientChatDetailScreen(
+                  chatRoomId: room.id,
+                  doctorName: room.doctorName,
+                ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not open chat: $e'),
+            backgroundColor: AppTheme.radiantPink,
+          ),
+        );
+      }
+    }
+  }
+
   void _showAddForm(BuildContext context) {
-    final docCtrl = TextEditingController();
-    final specCtrl = TextEditingController();
     final locCtrl = TextEditingController();
     final notesCtrl = TextEditingController();
     DateTime selectedDate = DateTime.now().add(const Duration(days: 7));
     TimeOfDay selectedTime = const TimeOfDay(hour: 10, minute: 0);
+    Map<String, dynamic>? selectedDoctor; // picked doctor from Firestore
 
     showModalBottomSheet(
       context: context,
@@ -600,16 +697,85 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    TextField(
-                      controller: docCtrl,
-                      decoration: const InputDecoration(
-                        hintText: 'Doctor Name',
+
+                    // Doctor search button
+                    GestureDetector(
+                      onTap: () async {
+                        final doctor = await _showDoctorSearch(context);
+                        if (doctor != null) {
+                          setBS(() => selectedDoctor = doctor);
+                        }
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                          horizontal: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.electricBlue.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color:
+                                selectedDoctor != null
+                                    ? AppTheme.electricBlue
+                                    : AppTheme.glassBorder,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.search_rounded,
+                              color:
+                                  selectedDoctor != null
+                                      ? AppTheme.electricBlue
+                                      : AppTheme.textSecondary,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    selectedDoctor != null
+                                        ? selectedDoctor!['name'] ?? 'Doctor'
+                                        : 'Search for a Doctor',
+                                    style: TextStyle(
+                                      color:
+                                          selectedDoctor != null
+                                              ? AppTheme.textPrimary
+                                              : AppTheme.textSecondary,
+                                      fontSize: 15,
+                                      fontWeight:
+                                          selectedDoctor != null
+                                              ? FontWeight.w600
+                                              : FontWeight.w400,
+                                    ),
+                                  ),
+                                  if (selectedDoctor != null &&
+                                      selectedDoctor!['specialty'] != null &&
+                                      (selectedDoctor!['specialty'] as String)
+                                          .isNotEmpty)
+                                    Text(
+                                      '${selectedDoctor!['specialty']}${selectedDoctor!['username'] != null && (selectedDoctor!['username'] as String).isNotEmpty ? ' • @${selectedDoctor!['username']}' : ''}',
+                                      style: const TextStyle(
+                                        color: AppTheme.textSecondary,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            if (selectedDoctor != null)
+                              const Icon(
+                                Icons.check_circle,
+                                color: AppTheme.neonGreen,
+                                size: 20,
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: specCtrl,
-                      decoration: const InputDecoration(hintText: 'Specialty'),
                     ),
                     const SizedBox(height: 10),
                     Row(
@@ -694,34 +860,64 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                         ),
                         child: ElevatedButton(
                           onPressed: () async {
-                            if (docCtrl.text.trim().isEmpty ||
-                                specCtrl.text.trim().isEmpty) {
+                            if (selectedDoctor == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please select a doctor first'),
+                                ),
+                              );
                               return;
                             }
-                            await ref
-                                .read(appointmentsProvider.notifier)
-                                .add(
-                                  Appointment(
-                                    doctorName: docCtrl.text.trim(),
-                                    specialty: specCtrl.text.trim(),
-                                    dateTime: DateTime(
-                                      selectedDate.year,
-                                      selectedDate.month,
-                                      selectedDate.day,
-                                      selectedTime.hour,
-                                      selectedTime.minute,
+                            try {
+                              await ref
+                                  .read(appointmentsProvider.notifier)
+                                  .add(
+                                    Appointment(
+                                      doctorName:
+                                          selectedDoctor!['name'] ?? 'Doctor',
+                                      specialty:
+                                          selectedDoctor!['specialty'] ?? '',
+                                      doctorId: selectedDoctor!['id'] as String,
+                                      dateTime: DateTime(
+                                        selectedDate.year,
+                                        selectedDate.month,
+                                        selectedDate.day,
+                                        selectedTime.hour,
+                                        selectedTime.minute,
+                                      ),
+                                      location:
+                                          locCtrl.text.trim().isNotEmpty
+                                              ? locCtrl.text.trim()
+                                              : 'TBD',
+                                      notes:
+                                          notesCtrl.text.trim().isNotEmpty
+                                              ? notesCtrl.text.trim()
+                                              : null,
                                     ),
-                                    location:
-                                        locCtrl.text.trim().isNotEmpty
-                                            ? locCtrl.text.trim()
-                                            : 'TBD',
-                                    notes:
-                                        notesCtrl.text.trim().isNotEmpty
-                                            ? notesCtrl.text.trim()
-                                            : null,
+                                  );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Appointment booked successfully!',
+                                    ),
+                                    backgroundColor: AppTheme.neonGreen,
                                   ),
                                 );
-                            if (context.mounted) Navigator.pop(context);
+                                Navigator.pop(context);
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Failed to save appointment: $e',
+                                    ),
+                                    backgroundColor: AppTheme.radiantPink,
+                                  ),
+                                );
+                              }
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,
@@ -735,6 +931,608 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                   ],
                 ),
               ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Show full doctor profile with bio, contact, availability and "Book" button.
+  Future<bool> _showDoctorDetail(
+    BuildContext context,
+    Map<String, dynamic> doc,
+  ) async {
+    final name = doc['name'] as String? ?? 'Doctor';
+    final specialty = doc['specialty'] as String? ?? '';
+    final username = doc['username'] as String? ?? '';
+    final bio = doc['bio'] as String? ?? '';
+    final phone = doc['phone'] as String? ?? '';
+    final email = doc['email'] as String? ?? '';
+    final availability = doc['availability'] as List<dynamic>? ?? [];
+    final doctorPic = doc['profilePicture'] as String?;
+    final accent = _accentFor(specialty);
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => Dialog(
+            backgroundColor: AppTheme.bgPrimary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Doctor avatar
+                  UserAvatar(imageUrl: doctorPic, name: name, radius: 36),
+                  const SizedBox(height: 12),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (username.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '@$username',
+                      style: const TextStyle(
+                        color: AppTheme.electricBlue,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                  if (specialty.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        specialty,
+                        style: TextStyle(
+                          color: accent,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  // Bio
+                  if (bio.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'About',
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        bio,
+                        style: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 14,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  // Contact info
+                  if (phone.isNotEmpty || email.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Contact',
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    if (phone.isNotEmpty) _infoRow(Icons.phone_rounded, phone),
+                    if (email.isNotEmpty) _infoRow(Icons.email_rounded, email),
+                  ],
+
+                  // Availability
+                  const SizedBox(height: 16),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Availability',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  if (availability.isNotEmpty)
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children:
+                          availability.map((slot) {
+                            final day = slot['dayOfWeek'] ?? '';
+                            final start = slot['startTime'] ?? '';
+                            final end = slot['endTime'] ?? '';
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.neonGreen.withValues(
+                                  alpha: 0.12,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: AppTheme.neonGreen.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                '$day  $start – $end',
+                                style: const TextStyle(
+                                  color: AppTheme.neonGreen,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                    )
+                  else
+                    const Text(
+                      'No availability set yet',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+
+                  const SizedBox(height: 24),
+
+                  // Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppTheme.textSecondary,
+                            side: const BorderSide(color: AppTheme.glassBorder),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: const Text('Back'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            gradient: AppTheme.accentGradient,
+                          ),
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: const Text('Book Appointment'),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+    );
+    return result == true;
+  }
+
+  Widget _infoRow(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: AppTheme.electricBlue),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show a browse/search dialog where patient can pick a doctor.
+  /// All registered doctors are shown by default with specialty + availability.
+  Future<Map<String, dynamic>?> _showDoctorSearch(BuildContext context) async {
+    return showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (ctx) {
+        String searchQuery = '';
+        List<Map<String, dynamic>> results = [];
+        bool loading = true;
+
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            // Load doctors on first build
+            if (loading) {
+              FirebaseFirestore.instance
+                  .collection('doctorProfiles')
+                  .get()
+                  .then((snapshot) {
+                    if (ctx.mounted) {
+                      setDialogState(() {
+                        results =
+                            snapshot.docs
+                                .map((doc) => {'id': doc.id, ...doc.data()})
+                                .toList();
+                        loading = false;
+                      });
+                    }
+                  })
+                  .catchError((e) {
+                    if (ctx.mounted) {
+                      setDialogState(() {
+                        loading = false;
+                      });
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to load doctors: $e'),
+                          backgroundColor: AppTheme.radiantPink,
+                        ),
+                      );
+                    }
+                  });
+            }
+
+            final filtered =
+                searchQuery.isEmpty
+                    ? results
+                    : results.where((doc) {
+                      final name = (doc['name'] as String? ?? '').toLowerCase();
+                      final specialty =
+                          (doc['specialty'] as String? ?? '').toLowerCase();
+                      final uname =
+                          (doc['username'] as String? ?? '').toLowerCase();
+                      final q = searchQuery.toLowerCase();
+                      return name.contains(q) ||
+                          specialty.contains(q) ||
+                          uname.contains(q);
+                    }).toList();
+
+            return AlertDialog(
+              backgroundColor: AppTheme.bgPrimary,
+              title: const Text(
+                'Browse Doctors',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 450,
+                child: Column(
+                  children: [
+                    TextField(
+                      style: const TextStyle(color: AppTheme.textPrimary),
+                      decoration: InputDecoration(
+                        hintText: 'Search by name, username, or specialty...',
+                        hintStyle: const TextStyle(
+                          color: AppTheme.textSecondary,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: AppTheme.textSecondary,
+                        ),
+                        filled: true,
+                        fillColor: AppTheme.glassWhite,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppTheme.glassBorder,
+                          ),
+                        ),
+                      ),
+                      onChanged: (v) => setDialogState(() => searchQuery = v),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child:
+                          loading
+                              ? const Center(
+                                child: CircularProgressIndicator(
+                                  color: AppTheme.electricBlue,
+                                ),
+                              )
+                              : filtered.isEmpty
+                              ? Center(
+                                child: Text(
+                                  searchQuery.isEmpty
+                                      ? 'No doctors registered yet'
+                                      : 'No doctors match "$searchQuery"',
+                                  style: const TextStyle(
+                                    color: AppTheme.textSecondary,
+                                  ),
+                                ),
+                              )
+                              : ListView.builder(
+                                itemCount: filtered.length,
+                                itemBuilder: (_, i) {
+                                  final doc = filtered[i];
+                                  final availability =
+                                      doc['availability'] as List<dynamic>? ??
+                                      [];
+                                  final specialty =
+                                      doc['specialty'] as String? ?? '';
+                                  final username =
+                                      doc['username'] as String? ?? '';
+
+                                  return Card(
+                                    color: AppTheme.glassWhite,
+                                    margin: const EdgeInsets.only(bottom: 10),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                      side: const BorderSide(
+                                        color: AppTheme.glassBorder,
+                                      ),
+                                    ),
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(14),
+                                      onTap: () async {
+                                        final selected =
+                                            await _showDoctorDetail(ctx, doc);
+                                        if (selected && ctx.mounted) {
+                                          Navigator.pop(ctx, doc);
+                                        }
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(12),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                UserAvatar(
+                                                  imageUrl:
+                                                      doc['profilePicture']
+                                                          as String?,
+                                                  name: doc['name'] ?? 'D',
+                                                  radius: 20,
+                                                  showGlow: false,
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        doc['name'] ?? 'Doctor',
+                                                        style: const TextStyle(
+                                                          color:
+                                                              AppTheme
+                                                                  .textPrimary,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          fontSize: 15,
+                                                        ),
+                                                      ),
+                                                      if (username.isNotEmpty)
+                                                        Text(
+                                                          '@$username',
+                                                          style: const TextStyle(
+                                                            color:
+                                                                AppTheme
+                                                                    .electricBlue,
+                                                            fontSize: 12,
+                                                          ),
+                                                        ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                if (specialty.isNotEmpty)
+                                                  Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 4,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: _accentFor(
+                                                        specialty,
+                                                      ).withValues(alpha: 0.15),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
+                                                    ),
+                                                    child: Text(
+                                                      specialty,
+                                                      style: TextStyle(
+                                                        color: _accentFor(
+                                                          specialty,
+                                                        ),
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                            // Bio preview
+                                            if ((doc['bio'] as String? ?? '')
+                                                .isNotEmpty) ...[
+                                              const SizedBox(height: 6),
+                                              Text(
+                                                doc['bio'] as String,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                  color: AppTheme.textSecondary,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ],
+                                            // Availability slots
+                                            if (availability.isNotEmpty) ...[
+                                              const SizedBox(height: 8),
+                                              const Divider(
+                                                color: AppTheme.glassBorder,
+                                                height: 1,
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Wrap(
+                                                spacing: 6,
+                                                runSpacing: 4,
+                                                children:
+                                                    availability.map((slot) {
+                                                      final day =
+                                                          slot['dayOfWeek'] ??
+                                                          '';
+                                                      final start =
+                                                          slot['startTime'] ??
+                                                          '';
+                                                      final end =
+                                                          slot['endTime'] ?? '';
+                                                      return Container(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 4,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color: AppTheme
+                                                              .neonGreen
+                                                              .withValues(
+                                                                alpha: 0.12,
+                                                              ),
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                6,
+                                                              ),
+                                                          border: Border.all(
+                                                            color: AppTheme
+                                                                .neonGreen
+                                                                .withValues(
+                                                                  alpha: 0.3,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                        child: Text(
+                                                          '${day.length > 3 ? day.substring(0, 3) : day} $start–$end',
+                                                          style: const TextStyle(
+                                                            color:
+                                                                AppTheme
+                                                                    .neonGreen,
+                                                            fontSize: 10,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                          ),
+                                                        ),
+                                                      );
+                                                    }).toList(),
+                                              ),
+                                            ],
+                                            if (availability.isEmpty)
+                                              const Padding(
+                                                padding: EdgeInsets.only(
+                                                  top: 6,
+                                                ),
+                                                child: Text(
+                                                  'No availability set yet',
+                                                  style: TextStyle(
+                                                    color:
+                                                        AppTheme.textSecondary,
+                                                    fontSize: 11,
+                                                    fontStyle: FontStyle.italic,
+                                                  ),
+                                                ),
+                                              ),
+                                            // Tap for details hint
+                                            const Padding(
+                                              padding: EdgeInsets.only(top: 6),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.end,
+                                                children: [
+                                                  Text(
+                                                    'Tap for details',
+                                                    style: TextStyle(
+                                                      color:
+                                                          AppTheme.electricBlue,
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                  SizedBox(width: 4),
+                                                  Icon(
+                                                    Icons
+                                                        .arrow_forward_ios_rounded,
+                                                    color:
+                                                        AppTheme.electricBlue,
+                                                    size: 10,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: AppTheme.textSecondary),
+                  ),
+                ),
+              ],
             );
           },
         );

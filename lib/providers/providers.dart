@@ -6,6 +6,9 @@ import '../repositories/medicines_repository.dart';
 import '../repositories/appointments_repository.dart';
 import '../repositories/profile_repository.dart';
 import '../repositories/checkin_repository.dart';
+import '../repositories/admin_notifications_repository.dart';
+import '../repositories/chat_repository.dart';
+import '../widgets/avatar_picker.dart';
 
 import '../services/notification_service.dart';
 
@@ -106,7 +109,8 @@ final medicinesProvider =
 class AppointmentsNotifier extends StateNotifier<List<Appointment>> {
   final AppointmentsRepository _repo;
   final NotificationService _notificationService = NotificationService();
-  AppointmentsNotifier(this._repo) : super(_repo.getAll());
+  final Ref _ref;
+  AppointmentsNotifier(this._repo, this._ref) : super(_repo.getAll());
 
   void refresh() => state = _repo.getAll();
 
@@ -120,9 +124,15 @@ class AppointmentsNotifier extends StateNotifier<List<Appointment>> {
   }
 
   Future<void> add(Appointment a) async {
-    await _repo.add(a);
-    _notificationService.scheduleAppointmentNotification(appointment: a);
-    refresh();
+    final patientName = _ref.read(profileProvider).name;
+    try {
+      await _repo.add(a, patientName: patientName);
+      _notificationService.scheduleAppointmentNotification(appointment: a);
+      refresh();
+    } catch (e) {
+      refresh();
+      rethrow;
+    }
   }
 
   Future<void> update(Appointment a) async {
@@ -148,8 +158,15 @@ class AppointmentsNotifier extends StateNotifier<List<Appointment>> {
 
 final appointmentsProvider =
     StateNotifierProvider<AppointmentsNotifier, List<Appointment>>((ref) {
-      return AppointmentsNotifier(ref.read(appointmentsRepoProvider));
+      return AppointmentsNotifier(ref.read(appointmentsRepoProvider), ref);
     });
+
+/// Real-time stream of patient appointments — reflects doctor accept/decline instantly.
+final patientAppointmentsStreamProvider = StreamProvider<List<Appointment>>((
+  ref,
+) {
+  return ref.read(appointmentsRepoProvider).watchAppointments();
+});
 
 // --- Profile ---
 class ProfileNotifier extends StateNotifier<UserProfile> {
@@ -158,7 +175,17 @@ class ProfileNotifier extends StateNotifier<UserProfile> {
 
   Future<void> loadFromFirestore() async {
     await _repo.load();
-    state = _repo.get();
+    var profile = _repo.get();
+    // Auto-assign avatar for existing profiles that don't have one
+    if (profile.profilePicture == null || profile.profilePicture!.isEmpty) {
+      final seed = profile.username ?? profile.name;
+      if (seed.isNotEmpty && profile.onboardingComplete) {
+        final url = kAvatarThemes[0].generateUrl(seed);
+        profile = profile.copyWith(profilePicture: url);
+        await _repo.update(profile);
+      }
+    }
+    state = profile;
   }
 
   Future<void> updateProfile(UserProfile p) async {
@@ -284,3 +311,30 @@ final vitalsProvider = StateNotifierProvider<VitalsNotifier, List<VitalRecord>>(
 
 /// Current bottom nav tab index.
 final currentTabProvider = StateProvider<int>((ref) => 0);
+
+// --- Patient Notifications (reuses AdminNotificationsRepository for the patient's own sub-collection) ---
+final patientNotificationsRepoProvider = Provider<AdminNotificationsRepository>(
+  (ref) => AdminNotificationsRepository(),
+);
+
+/// Stream provider for real-time patient notification updates.
+final patientNotificationsStreamProvider =
+    StreamProvider<List<AdminNotification>>((ref) {
+      return ref.read(patientNotificationsRepoProvider).watchNotifications();
+    });
+
+// --- Patient Chat ---
+final patientChatRepoProvider = Provider<ChatRepository>(
+  (ref) => ChatRepository(),
+);
+
+/// Stream provider for real-time patient chat room updates.
+final patientChatRoomsStreamProvider = StreamProvider<List<ChatRoom>>((ref) {
+  return ref.read(patientChatRepoProvider).watchPatientChatRooms();
+});
+
+/// Stream provider for real-time chat messages (shared by both patient and doctor).
+final patientChatMessagesStreamProvider =
+    StreamProvider.family<List<ChatMessage>, String>((ref, chatRoomId) {
+      return ref.read(patientChatRepoProvider).watchMessages(chatRoomId);
+    });
