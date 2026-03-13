@@ -1,5 +1,5 @@
-/// Themed avatar picker — lets users choose from multiple DiceBear styles.
-/// Each "theme" uses a different DiceBear style with vibrant backgrounds.
+// Themed avatar picker — lets users choose from multiple DiceBear styles.
+// Each "theme" uses a different DiceBear style with vibrant backgrounds.
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 

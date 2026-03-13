@@ -266,7 +266,7 @@ class _AdminDoctorProfileScreenState
                                 context: context,
                                 builder:
                                     (ctx) => AlertDialog(
-                                      backgroundColor: AppTheme.bgCard,
+                                      backgroundColor: AppTheme.bgSecondary,
                                       title: const Text(
                                         'Sign Out',
                                         style: TextStyle(
@@ -428,7 +428,7 @@ class _AdminDoctorProfileScreenState
           (ctx) => StatefulBuilder(
             builder:
                 (ctx, setDialogState) => AlertDialog(
-                  backgroundColor: AppTheme.bgCard,
+                  backgroundColor: AppTheme.bgSecondary,
                   title: const Text(
                     'Add Availability',
                     style: TextStyle(color: AppTheme.textPrimary),
@@ -438,7 +438,7 @@ class _AdminDoctorProfileScreenState
                     children: [
                       DropdownButtonFormField<String>(
                         initialValue: selectedDay,
-                        dropdownColor: AppTheme.bgCard,
+                        dropdownColor: AppTheme.bgSecondary,
                         style: const TextStyle(color: AppTheme.textPrimary),
                         items:
                             days

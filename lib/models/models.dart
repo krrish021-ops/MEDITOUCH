@@ -1,4 +1,4 @@
-// Data models for the Smart Health Reminder app.
+// Data models for the MEDITOUCH app.
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';

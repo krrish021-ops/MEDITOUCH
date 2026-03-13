@@ -1,4 +1,4 @@
-﻿// Smart Health Reminder app entry point.
+﻿// MEDITOUCH app entry point.
 // Splash → Auth Gate → Onboarding (if first time) → Main app with bottom nav.
 // Doctors/admins are routed to the admin shell instead.
 import 'package:flutter/material.dart';
@@ -18,7 +18,6 @@ import 'screens/profile_screen.dart';
 import 'screens/symptom_checker_screen.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
 import 'screens/admin/admin_appointments_screen.dart';
-import 'screens/admin/admin_patients_screen.dart';
 import 'screens/admin/admin_chat_screen.dart';
 import 'screens/admin/admin_doctor_profile_screen.dart';
 import 'services/notification_service.dart';
@@ -30,17 +29,25 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await NotificationService().init();
   await FcmService().init();
-  runApp(const ProviderScope(child: SmartHealthApp()));
+  runApp(const ProviderScope(child: MeditouchApp()));
 }
 
-class SmartHealthApp extends StatelessWidget {
-  const SmartHealthApp({super.key});
+class MeditouchApp extends StatelessWidget {
+  const MeditouchApp({super.key});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'MEDITOUCH',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.lightTheme.copyWith(
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: _FadeScaleTransitionBuilder(),
+            TargetPlatform.iOS: _FadeScaleTransitionBuilder(),
+            TargetPlatform.windows: _FadeScaleTransitionBuilder(),
+          },
+        ),
+      ),
       home: const AppEntry(),
     );
   }
@@ -219,13 +226,20 @@ class AppShell extends ConsumerWidget {
       extendBody: true,
       body: IndexedStack(index: currentTab, children: _screens),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Color(
+        decoration: BoxDecoration(
+          color: const Color(
             0xE6181A20,
           ), // 90% bgPrimary — opaque enough without blur
-          border: Border(
+          border: const Border(
             top: BorderSide(color: AppTheme.glassBorder, width: 0.5),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.radiantPink.withValues(alpha: 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
         ),
         padding: const EdgeInsets.only(top: 8, bottom: 8),
         child: SafeArea(
@@ -247,7 +261,7 @@ class AppShell extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color:
                         selected
-                            ? AppTheme.electricBlue.withValues(alpha: 0.15)
+                            ? AppTheme.radiantPink.withValues(alpha: 0.15)
                             : Colors.transparent,
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -258,17 +272,17 @@ class AppShell extends ConsumerWidget {
                         selected ? item.activeIcon : item.icon,
                         color:
                             selected
-                                ? AppTheme.electricBlue
+                                ? AppTheme.radiantPink
                                 : AppTheme.textSecondary,
                         size: 24,
                         shadows:
                             selected
                                 ? [
                                   Shadow(
-                                    color: AppTheme.electricBlue.withValues(
-                                      alpha: 0.5,
+                                    color: AppTheme.radiantPink.withValues(
+                                      alpha: 0.6,
                                     ),
-                                    blurRadius: 12,
+                                    blurRadius: 16,
                                   ),
                                 ]
                                 : null,
@@ -282,7 +296,7 @@ class AppShell extends ConsumerWidget {
                               selected ? FontWeight.w600 : FontWeight.w400,
                           color:
                               selected
-                                  ? AppTheme.electricBlue
+                                  ? AppTheme.radiantPink
                                   : AppTheme.textSecondary,
                         ),
                       ),
@@ -312,7 +326,6 @@ class AdminShell extends ConsumerWidget {
   static const _screens = [
     AdminDashboardScreen(),
     AdminAppointmentsScreen(),
-    AdminPatientsScreen(),
     AdminChatScreen(),
     AdminDoctorProfileScreen(),
   ];
@@ -324,7 +337,6 @@ class AdminShell extends ConsumerWidget {
       Icons.calendar_month_outlined,
       'Appts',
     ),
-    _NavItem(Icons.people_rounded, Icons.people_outlined, 'Patients'),
     _NavItem(Icons.chat_rounded, Icons.chat_outlined, 'Chat'),
     _NavItem(Icons.person_rounded, Icons.person_outline, 'Profile'),
   ];
@@ -336,11 +348,18 @@ class AdminShell extends ConsumerWidget {
       extendBody: true,
       body: IndexedStack(index: currentTab, children: _screens),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xE6181A20),
-          border: Border(
+        decoration: BoxDecoration(
+          color: const Color(0xE6181A20),
+          border: const Border(
             top: BorderSide(color: AppTheme.glassBorder, width: 0.5),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.radiantPink.withValues(alpha: 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
         ),
         padding: const EdgeInsets.only(top: 8, bottom: 8),
         child: SafeArea(
@@ -362,7 +381,7 @@ class AdminShell extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color:
                         selected
-                            ? AppTheme.electricBlue.withValues(alpha: 0.15)
+                            ? AppTheme.radiantPink.withValues(alpha: 0.15)
                             : Colors.transparent,
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -373,17 +392,17 @@ class AdminShell extends ConsumerWidget {
                         selected ? item.activeIcon : item.icon,
                         color:
                             selected
-                                ? AppTheme.electricBlue
+                                ? AppTheme.radiantPink
                                 : AppTheme.textSecondary,
                         size: 24,
                         shadows:
                             selected
                                 ? [
                                   Shadow(
-                                    color: AppTheme.electricBlue.withValues(
-                                      alpha: 0.5,
+                                    color: AppTheme.radiantPink.withValues(
+                                      alpha: 0.6,
                                     ),
-                                    blurRadius: 12,
+                                    blurRadius: 16,
                                   ),
                                 ]
                                 : null,
@@ -397,7 +416,7 @@ class AdminShell extends ConsumerWidget {
                               selected ? FontWeight.w600 : FontWeight.w400,
                           color:
                               selected
-                                  ? AppTheme.electricBlue
+                                  ? AppTheme.radiantPink
                                   : AppTheme.textSecondary,
                         ),
                       ),
@@ -408,6 +427,30 @@ class AdminShell extends ConsumerWidget {
             }),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Custom page transition: fade + subtle scale for a modern sci-fi feel.
+class _FadeScaleTransitionBuilder extends PageTransitionsBuilder {
+  const _FadeScaleTransitionBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return FadeTransition(
+      opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0.96, end: 1.0).animate(
+          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+        ),
+        child: child,
       ),
     );
   }

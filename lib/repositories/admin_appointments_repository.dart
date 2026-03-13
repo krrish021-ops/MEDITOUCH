@@ -3,6 +3,7 @@
 library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../models/models.dart';
 import '../services/firestore_service.dart';
@@ -72,9 +73,9 @@ class AdminAppointmentsRepository {
             .doc(appt.patientId)
             .collection('appointments')
             .doc(id)
-            .set({'status': 'accepted'}, SetOptions(merge: true));
-      } catch (_) {
-        // Don't block if patient subcollection write fails
+            .update({'status': 'accepted'});
+      } catch (e) {
+        debugPrint('Failed to update patient appointment: $e');
       }
     }
     // Notify the patient
@@ -113,8 +114,10 @@ class AdminAppointmentsRepository {
             .doc(appt.patientId)
             .collection('appointments')
             .doc(id)
-            .set(data, SetOptions(merge: true));
-      } catch (_) {}
+            .update(data);
+      } catch (e) {
+        debugPrint('Failed to update patient appointment: $e');
+      }
     }
     // Notify the patient
     final body =
@@ -141,8 +144,10 @@ class AdminAppointmentsRepository {
             .doc(appt.patientId)
             .collection('appointments')
             .doc(id)
-            .set(data, SetOptions(merge: true));
-      } catch (_) {}
+            .update(data);
+      } catch (e) {
+        debugPrint('Failed to update patient appointment: $e');
+      }
     }
   }
 
@@ -160,8 +165,10 @@ class AdminAppointmentsRepository {
             .doc(appt.patientId)
             .collection('appointments')
             .doc(id)
-            .set(data, SetOptions(merge: true));
-      } catch (_) {}
+            .update(data);
+      } catch (e) {
+        debugPrint('Failed to update patient appointment: $e');
+      }
     }
     await _notifyPatient(
       appt,

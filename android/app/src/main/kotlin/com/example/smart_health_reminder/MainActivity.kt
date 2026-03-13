@@ -1,4 +1,4 @@
-package com.example.smart_health_reminder
+package com.example.meditouch
 
 import android.os.Build
 import android.os.Bundle

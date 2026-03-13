@@ -1,5 +1,5 @@
-name: smart_health_reminder
-description: A smart health reminder Flutter application.
+name: meditouch
+description: A MEDITOUCH Flutter application.
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -24,6 +24,7 @@ dependencies:
   cloud_firestore: ^5.6.5
   firebase_auth: ^5.5.1
   firebase_messaging: ^15.2.10
+  sensors_plus: ^7.0.0
 
 dev_dependencies:
   flutter_test:

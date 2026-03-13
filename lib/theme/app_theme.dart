@@ -7,29 +7,44 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
+  // ─── Backwards-compat gradients for legacy code ─────────────
+  static const LinearGradient greenBlueGradient = bluePurpleGradient;
+  static const LinearGradient orangePinkGradient = orangeMagentaGradient;
   AppTheme._();
 
-  // ─── Color Palette (from README) ───────────────────────────────────
-  static const Color bgPrimary = Color(0xFF181A20); // Charcoal Black
-  static const Color bgSecondary = Color(0xFF23243A); // Deep Slate
-  static const Color electricBlue = Color(0xFF00B4FF);
-  static const Color neonGreen = Color(0xFF00FFB0);
-  static const Color vividOrange = Color(0xFFFF8C42);
-  static const Color radiantPink = Color(0xFFFF4F8B);
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFFB0B3C6);
-  static const Color glassWhite = Color(0x14FFFFFF); // ~8 % white
-  static const Color glassBorder = Color(0x30FFFFFF); // subtle border
+  // ─── Spider-Verse Color Palette ───────────────────────────────────
+  static const Color bgPrimary = Color(0xFF0A0A23); // Spider Black
+  static const Color bgSecondary = Color(0xFF181A20); // Deep Cosmic Black
+  static const Color electricBlue = Color(0xFF00CFFF); // Electric Blue
+  static const Color neonGreen = Color(0xFF00FFB0); // Neon Green (keep)
+  static const Color vividOrange = Color(0xFFFFB300); // Spider Orange
+  static const Color radiantPink = Color(0xFFFF1C7E); // Neon Magenta
+  static const Color vividPurple = Color(0xFF7C3AED); // Vivid Purple
+  static const Color textPrimary = Color(0xFFFFFFFF); // Web White
+  static const Color textSecondary = Color(0xFFB0B3C6); // Silk Gray
+  static const Color glassWhite = Color(0x14FFFFFF); // Glassmorphic card fill
+  static const Color glassBorder = Color(0x30FFFFFF); // Glow border
 
-  // Gradient
+  // Gradients
   static const LinearGradient accentGradient = LinearGradient(
-    colors: [electricBlue, radiantPink],
+    colors: [radiantPink, electricBlue],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
   );
-  static const LinearGradient greenBlueGradient = LinearGradient(
-    colors: [neonGreen, electricBlue],
+  static const LinearGradient spiderVerseGradient = LinearGradient(
+    colors: [radiantPink, electricBlue, vividPurple],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
   );
-  static const LinearGradient orangePinkGradient = LinearGradient(
+  static const LinearGradient orangeMagentaGradient = LinearGradient(
     colors: [vividOrange, radiantPink],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  static const LinearGradient bluePurpleGradient = LinearGradient(
+    colors: [electricBlue, vividPurple],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
   );
 
   // ─── Backwards-Compat Aliases ──────────────────────────────────────
@@ -74,45 +89,62 @@ class AppTheme {
         onSurface: textPrimary,
         onError: textPrimary,
       ),
-      textTheme: GoogleFonts.poppinsTextTheme(base.textTheme)
-          .apply(bodyColor: textPrimary, displayColor: textPrimary)
-          .copyWith(
-            headlineLarge: GoogleFonts.poppins(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: textPrimary,
-            ),
-            headlineMedium: GoogleFonts.poppins(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: textPrimary,
-            ),
-            titleLarge: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: textPrimary,
-            ),
-            titleMedium: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: textPrimary,
-            ),
-            bodyLarge: GoogleFonts.inter(fontSize: 16, color: textPrimary),
-            bodyMedium: GoogleFonts.inter(fontSize: 14, color: textSecondary),
-            labelLarge: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: textPrimary,
-            ),
-          ),
+      textTheme: base.textTheme.copyWith(
+        // Headings: Bebas Neue or Poppins, all-caps, bold, neon glow
+        headlineLarge: GoogleFonts.bebasNeue(
+          fontSize: 36,
+          fontWeight: FontWeight.w700,
+          color: textPrimary,
+          letterSpacing: 4,
+          shadows: [
+            Shadow(color: electricBlue.withValues(alpha: 0.6), blurRadius: 12),
+            Shadow(color: radiantPink.withValues(alpha: 0.3), blurRadius: 28),
+          ],
+        ),
+        headlineMedium: GoogleFonts.bebasNeue(
+          fontSize: 28,
+          fontWeight: FontWeight.w700,
+          color: textPrimary,
+          letterSpacing: 3,
+          shadows: [
+            Shadow(color: electricBlue.withValues(alpha: 0.5), blurRadius: 10),
+            Shadow(color: radiantPink.withValues(alpha: 0.25), blurRadius: 24),
+          ],
+        ),
+        titleLarge: GoogleFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          color: textPrimary,
+          letterSpacing: 2,
+        ),
+        titleMedium: GoogleFonts.poppins(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: textPrimary,
+        ),
+        bodyLarge: GoogleFonts.inter(
+          fontSize: 16,
+          color: textSecondary,
+          fontWeight: FontWeight.w500,
+          shadows: [Shadow(color: glassBorder, blurRadius: 2)],
+        ),
+        bodyMedium: GoogleFonts.inter(fontSize: 14, color: textSecondary),
+        labelLarge: GoogleFonts.inter(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: radiantPink,
+          letterSpacing: 1.5,
+        ),
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.poppins(
+        titleTextStyle: GoogleFonts.bebasNeue(
           color: textPrimary,
-          fontSize: 22,
+          fontSize: 28,
           fontWeight: FontWeight.w700,
+          letterSpacing: 3,
         ),
         iconTheme: const IconThemeData(color: textPrimary),
       ),
@@ -126,8 +158,8 @@ class AppTheme {
         margin: const EdgeInsets.symmetric(vertical: 6),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: bgPrimary,
-        selectedItemColor: electricBlue,
+        backgroundColor: glassWhite,
+        selectedItemColor: radiantPink,
         unselectedItemColor: textSecondary,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
@@ -230,15 +262,28 @@ class AppTheme {
 
   // ─── Decorations & Helpers ─────────────────────────────────────────
 
-  /// Glassmorphic card decoration with blur-ready styling.
+  /// Glassmorphic card decoration with blur-ready styling and soft shadow.
   static BoxDecoration glassCard({
     double borderRadius = 20,
     Color? borderColor,
+    Color? glowColor,
   }) {
     return BoxDecoration(
       color: glassWhite,
       borderRadius: BorderRadius.circular(borderRadius),
       border: Border.all(color: borderColor ?? glassBorder, width: 1),
+      boxShadow: [
+        BoxShadow(
+          color: (glowColor ?? electricBlue).withValues(alpha: 0.08),
+          blurRadius: 18,
+          spreadRadius: 0,
+        ),
+        const BoxShadow(
+          color: Color(0x20000000),
+          blurRadius: 12,
+          offset: Offset(0, 4),
+        ),
+      ],
     );
   }
 
@@ -253,7 +298,41 @@ class AppTheme {
     ];
   }
 
+  /// Double-layer glow for more intense neon effect.
+  static List<BoxShadow> neonGlow(Color c) {
+    return [
+      BoxShadow(
+        color: c.withValues(alpha: 0.6),
+        blurRadius: 16,
+        spreadRadius: 1,
+      ),
+      BoxShadow(
+        color: c.withValues(alpha: 0.25),
+        blurRadius: 40,
+        spreadRadius: 4,
+      ),
+    ];
+  }
+
   static List<BoxShadow> get fabGlow => glow(electricBlue, blur: 24, spread: 2);
+
+  /// Neon-glowing text style for headings.
+  static TextStyle neonText({
+    double fontSize = 28,
+    FontWeight fontWeight = FontWeight.w800,
+    Color color = textPrimary,
+    Color glowColor = electricBlue,
+  }) {
+    return GoogleFonts.poppins(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+      shadows: [
+        Shadow(color: glowColor.withValues(alpha: 0.6), blurRadius: 16),
+        Shadow(color: glowColor.withValues(alpha: 0.3), blurRadius: 40),
+      ],
+    );
+  }
 
   /// Full-screen gradient background.
   static BoxDecoration get scaffoldGradient => const BoxDecoration(
@@ -264,4 +343,43 @@ class AppTheme {
       stops: [0.0, 0.5, 1.0],
     ),
   );
+
+  /// Fade + Scale page transition for screen navigation.
+  static Widget fadeScaleTransition(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return FadeTransition(
+      opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0.95, end: 1.0).animate(
+          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+        ),
+        child: child,
+      ),
+    );
+  }
+
+  /// Slide + Fade page transition.
+  static Widget slideFadeTransition(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return FadeTransition(
+      opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0.05, 0),
+          end: Offset.zero,
+        ).animate(
+          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+        ),
+        child: child,
+      ),
+    );
+  }
 }

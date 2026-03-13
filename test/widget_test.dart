@@ -9,11 +9,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:smart_health_reminder/main.dart';
+import 'package:meditouch/main.dart';
 
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
-    await tester.pumpWidget(const ProviderScope(child: SmartHealthApp()));
+    await tester.pumpWidget(const ProviderScope(child: MeditouchApp()));
     await tester.pump();
     expect(find.byType(MaterialApp), findsOneWidget);
   });

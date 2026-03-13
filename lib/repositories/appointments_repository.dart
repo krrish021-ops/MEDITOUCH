@@ -115,13 +115,20 @@ class AppointmentsRepository {
     _appointments.removeWhere((a) => a.id == id);
   }
 
-  /// Real-time stream of patient's appointments — reflects doctor accept/decline instantly.
+  /// Real-time stream of patient's appointments from the **shared** collection.
+  /// The doctor reliably updates the shared collection, so watching it here
+  /// ensures the patient sees status changes (accepted / declined) instantly.
   Stream<List<Appointment>> watchAppointments() {
-    return _firestore.appointmentsCollection.snapshots().map((snapshot) {
-      _appointments =
-          snapshot.docs.map((doc) => Appointment.fromMap(doc.data())).toList()
-            ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
-      return _appointments;
-    });
+    return _firestore.sharedAppointmentsCollection
+        .where('patientId', isEqualTo: _firestore.uid)
+        .snapshots()
+        .map((snapshot) {
+          _appointments =
+              snapshot.docs
+                  .map((doc) => Appointment.fromMap(doc.data()))
+                  .toList()
+                ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+          return _appointments;
+        });
   }
 }

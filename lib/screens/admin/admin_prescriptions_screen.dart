@@ -386,7 +386,7 @@ class _PrescriptionEditorScreenState
       context: context,
       builder:
           (ctx) => AlertDialog(
-            backgroundColor: AppTheme.bgCard,
+            backgroundColor: AppTheme.bgSecondary,
             title: Text(
               existing != null ? 'Edit Medication' : 'Add Medication',
               style: const TextStyle(color: AppTheme.textPrimary),
@@ -488,7 +488,7 @@ class _PrescriptionEditorScreenState
       context: context,
       builder:
           (ctx) => AlertDialog(
-            backgroundColor: AppTheme.bgCard,
+            backgroundColor: AppTheme.bgSecondary,
             title: const Text(
               'Delete Prescription',
               style: TextStyle(color: AppTheme.textPrimary),
